@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.env.local
+.pnpm-store/
+coverage/
+*.log
+.DS_Store
+.claude
+CLAUDE.md
+# Prisma clients gerados — saída dedicada por service (ver prisma/schema.prisma).
+services/*/src/generated/

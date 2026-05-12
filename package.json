@@ -1,0 +1,29 @@
+{
+  "name": "hr-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma HR Core — base compartilhada para microserviços (Node.js + TypeScript + pnpm)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.11.0",
+    "pnpm": ">=11.0.0"
+  },
+  "packageManager": "pnpm@11.0.9",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "pnpm typecheck"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.0.0",
+    "@commitlint/config-conventional": "^21.0.0",
+    "@types/node": "^25.6.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.4",
+    "typescript": "^6.0.3"
+  }
+}
