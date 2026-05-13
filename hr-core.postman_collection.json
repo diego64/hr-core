@@ -1,0 +1,584 @@
+{
+  "info": {
+    "_postman_id": "8d7a3c12-4b2e-4f1a-9c5e-1a2b3c4d5e6f",
+    "name": "HR Core — API Gateway",
+    "description": "Collection para testes manuais do API Gateway do HR Core.\n\n## Como usar\n\n1. Importe este arquivo no Postman.\n2. Ajuste a variável `base_url` se o gateway não estiver em `http://localhost:3000`.\n3. Faça login no Auth Service (fora desta collection) e cole o JWT em `access_token`.\n4. Opcional: ajuste `funcionario_id`, `ferias_id` e `avaliacao_id` para IDs reais.\n\n## Convenções\n\n- Payloads em `snake_case`\n- Datas em ISO 8601 (`YYYY-MM-DD` ou `YYYY-MM-DDTHH:mm:ssZ`)\n- IDs como string (UUID v4)\n- Envelope `{ \"data\": ... }` em request e response\n- Erros seguem RFC 7807 (`application/problem+json`) com `traceId`\n\n## Folders\n\n- **Health** — liveness/readiness probes (público)\n- **Funcionários** — `/api/v1/funcionarios/*` (auth)\n- **Férias** — `/api/v1/ferias/*` (auth)\n- **Avaliações** — `/api/v1/avaliacoes/*` (auth)\n- **Folha de Pagamento** — `/api/v1/folha-de-pagamento/*` (auth)\n- **Errors (RFC 7807)** — cenários de erro para validar o contrato\n",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// trace id por requisição — propagado no header e útil para correlacionar logs",
+          "pm.request.headers.upsert({ key: 'X-Trace-Id', value: pm.variables.replaceIn('{{$guid}}') });"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// asserção global: respostas de erro devem seguir RFC 7807",
+          "if (pm.response.code >= 400) {",
+          "  pm.test('erro segue RFC 7807 (application/problem+json)', function () {",
+          "    pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/problem+json');",
+          "    const body = pm.response.json();",
+          "    pm.expect(body).to.have.property('type');",
+          "    pm.expect(body).to.have.property('title');",
+          "    pm.expect(body).to.have.property('status', pm.response.code);",
+          "    pm.expect(body).to.have.property('traceId');",
+          "  });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "URL do API Gateway"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT (RS256) emitido pelo Auth Service. Preencha após login."
+    },
+    {
+      "key": "funcionario_id",
+      "value": "550e8400-e29b-41d4-a716-446655440000",
+      "type": "string",
+      "description": "UUID v4 de um funcionário existente"
+    },
+    {
+      "key": "ferias_id",
+      "value": "550e8400-e29b-41d4-a716-446655440010",
+      "type": "string",
+      "description": "UUID v4 de um pedido de férias"
+    },
+    {
+      "key": "avaliacao_id",
+      "value": "550e8400-e29b-41d4-a716-446655440020",
+      "type": "string",
+      "description": "UUID v4 de uma avaliação"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "description": "Liveness e readiness probes. Públicos — não exigem autenticação.",
+      "item": [
+        {
+          "name": "GET /health (liveness)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Sempre retorna 200 quando o processo está vivo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('payload com status=ok', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('ok');",
+                  "  pm.expect(body.service).to.eql('api-gateway');",
+                  "  pm.expect(body.timestamp).to.match(/\\d{4}-\\d{2}-\\d{2}T/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET /ready (readiness)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ready",
+              "host": ["{{base_url}}"],
+              "path": ["ready"]
+            },
+            "description": "Hoje retorna estático. Roadmap: checar conectividade com JWKS e cada downstream."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('payload com status=ready', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('ready');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Funcionários",
+      "description": "Proxy `/api/v1/funcionarios/*` → Funcionário Service. Autenticado.",
+      "item": [
+        {
+          "name": "GET /api/v1/funcionarios (list)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/funcionarios?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "funcionarios"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" },
+                { "key": "departamento", "value": "Engenharia", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/funcionarios/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/funcionarios/{{funcionario_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "funcionarios", "{{funcionario_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/funcionarios (criar)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"nome\": \"Maria Silva\",\n    \"email\": \"maria.silva@hr-core.local\",\n    \"cpf\": \"12345678901\",\n    \"data_admissao\": \"2024-01-15\",\n    \"cargo\": \"Engenheira de Software\",\n    \"departamento\": \"Engenharia\",\n    \"salario\": 12500.00\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/funcionarios",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "funcionarios"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.data && body.data.id) {",
+                  "    pm.collectionVariables.set('funcionario_id', body.data.id);",
+                  "    console.log('funcionario_id atualizado:', body.data.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "PATCH /api/v1/funcionarios/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"cargo\": \"Engenheira de Software Sênior\",\n    \"salario\": 16000.00\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/funcionarios/{{funcionario_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "funcionarios", "{{funcionario_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/v1/funcionarios/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/funcionarios/{{funcionario_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "funcionarios", "{{funcionario_id}}"]
+            },
+            "description": "Soft delete — publica `usuario.disabled` no Kafka."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Férias",
+      "description": "Proxy `/api/v1/ferias/*` → Férias Service.\n\nRN: funcionário precisa de 1+ ano de empresa; sem sobreposição de períodos.",
+      "item": [
+        {
+          "name": "GET /api/v1/ferias (list, filtro opcional)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ferias?funcionario_id={{funcionario_id}}&status=approved",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ferias"],
+              "query": [
+                { "key": "funcionario_id", "value": "{{funcionario_id}}" },
+                {
+                  "key": "status",
+                  "value": "approved",
+                  "description": "pending | approved | rejected"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/ferias/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ferias/{{ferias_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ferias", "{{ferias_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/ferias (solicitar)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"funcionario_id\": \"{{funcionario_id}}\",\n    \"data_inicio\": \"2026-07-01\",\n    \"data_fim\": \"2026-07-15\",\n    \"observacao\": \"Viagem em família\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ferias",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ferias"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.data && body.data.id) {",
+                  "    pm.collectionVariables.set('ferias_id', body.data.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/ferias/:id/aprovar",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"observacao\": \"Aprovado pelo gestor direto\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ferias/{{ferias_id}}/aprovar",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ferias", "{{ferias_id}}", "aprovar"]
+            },
+            "description": "Publica `ferias.approved` no Kafka. Consumido por Notification, Folha de Pagamento e Dashboard."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/ferias/:id/rejeitar",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"motivo\": \"Período conflita com fechamento mensal.\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ferias/{{ferias_id}}/rejeitar",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ferias", "{{ferias_id}}", "rejeitar"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "description": "Proxy `/api/v1/avaliacoes/*` → Avaliação Service.",
+      "item": [
+        {
+          "name": "GET /api/v1/avaliacoes (list)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/avaliacoes?ciclo=2026-Q2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "avaliacoes"],
+              "query": [
+                { "key": "ciclo", "value": "2026-Q2" },
+                { "key": "funcionario_id", "value": "{{funcionario_id}}", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/avaliacoes/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/avaliacoes/{{avaliacao_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "avaliacoes", "{{avaliacao_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/avaliacoes (criar)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"funcionario_id\": \"{{funcionario_id}}\",\n    \"avaliador_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n    \"ciclo\": \"2026-Q2\",\n    \"nota\": 4.5,\n    \"competencias\": {\n      \"tecnica\": 5,\n      \"comunicacao\": 4,\n      \"colaboracao\": 4.5\n    },\n    \"comentarios\": \"Excelente desempenho no trimestre. Liderou a entrega do módulo X.\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/avaliacoes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "avaliacoes"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.data && body.data.id) {",
+                  "    pm.collectionVariables.set('avaliacao_id', body.data.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Folha de Pagamento",
+      "description": "Proxy `/api/v1/folha-de-pagamento/*` → Folha de Pagamento Service.",
+      "item": [
+        {
+          "name": "GET /api/v1/folha-de-pagamento (list)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/folha-de-pagamento?ano=2026&mes=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "folha-de-pagamento"],
+              "query": [
+                { "key": "ano", "value": "2026" },
+                { "key": "mes", "value": "5" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/folha-de-pagamento/gerar",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"mes\": 5,\n    \"ano\": 2026,\n    \"data_corte\": \"2026-05-25\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/folha-de-pagamento/gerar",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "folha-de-pagamento", "gerar"]
+            },
+            "description": "Publica `folha-de-pagamento.generated` no Kafka."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Errors (RFC 7807)",
+      "description": "Cenários que validam o contrato de erro RFC 7807 (`application/problem+json`).",
+      "item": [
+        {
+          "name": "401 — request sem Bearer token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/funcionarios",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "funcionarios"]
+            },
+            "description": "Auth desabilitada na request — gateway responde 401."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status 401', function () { pm.response.to.have.status(401); });"]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "401 — token inválido",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJSUzI1NiJ9.invalid.signature",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/funcionarios",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "funcionarios"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status 401', function () { pm.response.to.have.status(401); });"]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "404 — rota inexistente",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/this-route-does-not-exist",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "this-route-does-not-exist"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('type categoriza como not-found', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.type).to.include('not-found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "429 — rate limit (rodar várias vezes em sequência)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Use o **Runner** do Postman ou execute manualmente N vezes acima de `RATE_LIMIT_MAX` (default 100/min) para forçar o 429. O body deve seguir RFC 7807 com `type` apontando para `rate-limit`."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
