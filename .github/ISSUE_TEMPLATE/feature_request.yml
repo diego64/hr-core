@@ -1,0 +1,166 @@
+name: ✨ Feature Request
+description: Proponha uma nova funcionalidade ou melhoria em um dos serviços
+title: 'feat(<scope>): <resumo curto e específico>'
+labels: ['enhancement', 'triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado pela proposta. Antes de detalhar:
+
+        - Confirme que a feature **se encaixa na arquitetura** descrita em [`CLAUDE.md`](../blob/main/CLAUDE.md) — ou justifique por que precisa fugir dela.
+        - Lembre: API Gateway **não contém regra de negócio**. Lógica de domínio mora nos microsserviços.
+        - Pesquise [issues existentes](../issues?q=is%3Aissue) para evitar duplicatas.
+
+        Foco em **problema → solução**, não em "quero X".
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Escopo
+      description: Onde a feature vive? Use o mesmo escopo do commitlint.
+      options:
+        - api-gateway
+        - auth
+        - funcionario
+        - ferias
+        - avaliacao
+        - folha-de-pagamento
+        - notification
+        - reports
+        - dashboard
+        - packages/kafka
+        - packages/mongo
+        - packages/logger
+        - packages/jwt
+        - packages/domain
+        - infra / tooling
+        - Documentação / processo
+        - Cross-cutting (afeta múltiplos serviços)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Tipo
+      options:
+        - 'Funcionalidade nova (feat)'
+        - 'Melhoria em funcionalidade existente'
+        - 'Performance / otimização'
+        - 'Refatoração arquitetural'
+        - 'Ferramenta de desenvolvimento (DX)'
+        - 'Observabilidade (métrica, log, trace, dashboard)'
+        - 'Segurança'
+        - 'Documentação'
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema / motivação
+      description: Qual dor isso resolve? Quem sente essa dor? Quão frequente é?
+      placeholder: |
+        Ex.: hoje quando o token de um usuário é revogado pelo Auth Service, o api-gateway só recusa a próxima request após o token expirar (até 15min). Isso é problema em incidentes de credencial comprometida — o tempo até o bloqueio efetivo é alto demais.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solução proposta
+      description: Como você imagina resolver? Pode ser alto nível — desenho da arquitetura, contrato de API, fluxo. Não precisa ser implementação detalhada.
+      placeholder: |
+        Ex.: Auth Service publica evento `token.revoked` no Kafka com `{ jti, exp, reason }`. API Gateway consome (consumer group `api-gateway-token-revoked-group`) e mantém Set em memória com TTL = exp do token. Plugin `auth.ts` consulta esse Set antes de aceitar o JWT.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: Quais outras abordagens foram pensadas e por que você descartou? Mostra que você pensou no problema, não só na solução.
+      placeholder: |
+        Ex.:
+        - Checagem síncrona contra Auth Service por request: introduz latência e acoplamento; descartado.
+        - Reduzir vida do access token para 1min: aumenta carga no Auth Service (refresh constante); descartado.
+        - Cache compartilhado em Redis: adiciona dependência operacional para o gateway; viável mas mais caro que in-memory.
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impacto
+      description: Que serviços, contratos ou times são afetados?
+      placeholder: |
+        Ex.:
+        - **Auth Service**: precisa emitir `jti` no JWT e publicar evento `token.revoked` no Kafka. Mudança breaking para clientes que não esperam claim `jti`.
+        - **API Gateway**: novo consumer Kafka + plugin de cache; aumenta footprint de memória (~80KB por 1000 tokens revogados).
+        - **Microsserviços downstream**: nenhum impacto direto — gateway barra antes.
+        - **Frontend / clientes**: nenhum.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: É breaking change?
+      options:
+        - 'Não'
+        - 'Sim — quebra contrato de API'
+        - 'Sim — quebra contrato de evento Kafka'
+        - 'Sim — exige migração de banco'
+        - 'Sim — exige nova env / config'
+        - 'Não tenho certeza'
+    validations:
+      required: true
+
+  - type: textarea
+    id: conformity
+    attributes:
+      label: Conformidade com CLAUDE.md
+      description: A proposta respeita os princípios arquiteturais? Justifique qualquer desvio.
+      placeholder: |
+        Ex.: respeita.
+        - Não adiciona regra de negócio no gateway (revogação é mecanismo de auth, não domínio).
+        - Não usa Kafka como substituto de HTTP síncrono.
+        - Não compartilha banco entre serviços.
+        - Evento `token.revoked` é imutável (gateway só consome).
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critérios de aceitação
+      description: Como saber que está pronto? Lista de comportamentos verificáveis.
+      placeholder: |
+        - [ ] Auth Service emite evento `token.revoked` com payload conforme contrato
+        - [ ] API Gateway recusa tokens revogados com 401 e detail "Token has been revoked"
+        - [ ] Cache faz GC de tokens já expirados (não cresce indefinidamente)
+        - [ ] Teste E2E: token revogado pelo Auth Service → request ao gateway → 401 em < 1s
+        - [ ] Documentação no README do gateway + atualização da tabela "Kafka — Eventos Principais" no CLAUDE.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: extras
+    attributes:
+      label: Detalhes adicionais (opcional)
+      description: Links externos, RFCs, diagramas, prints. Anexar imagens é OK.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmações
+      options:
+        - label: Pesquisei issues existentes e esta feature ainda não foi proposta
+          required: true
+        - label: A proposta respeita CLAUDE.md (ou eu justifiquei o desvio)
+          required: true
+        - label: Considerei pelo menos uma alternativa antes de propor esta solução
+          required: true

@@ -1,0 +1,16 @@
+# Bloqueia issues em branco (sem template) — força uso de bug_report ou feature_request
+blank_issues_enabled: false
+
+# Links que aparecem na tela de "nova issue" antes dos templates
+contact_links:
+  - name: Dúvida arquitetural ou de domínio
+    url: https://github.com/diegoferreira1964/hr-core/blob/main/CLAUDE.md
+    about: Antes de abrir issue, confira o CLAUDE.md — cobre arquitetura, regras de negócio, padrões de microsserviço e stack tech.
+
+  - name: Como contribuir
+    url: https://github.com/diegoferreira1964/hr-core/blob/main/CONTRIBUTING.md
+    about: Fluxo de branch, padrão de commits, template de PR e checklist pré-review.
+
+  - name: Documentação do API Gateway
+    url: https://github.com/diegoferreira1964/hr-core/blob/main/services/api-gateway/README.md
+    about: Spec OpenAPI em /docs, observabilidade no Grafana (administrador / 1qaz2wsx12), troubleshooting do pipeline de métricas e traces.
