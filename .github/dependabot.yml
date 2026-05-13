@@ -1,0 +1,231 @@
+# =============================================================================
+# Dependabot — atualização automática de dependências
+# =============================================================================
+#
+# Documentação:
+#   https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Os commits gerados seguem Conventional Commits com prefixo `chore(deps): ...`
+# — alinhado com a enum de escopos em `commitlint.config.cjs` e com o tipo
+# permitido na seção "Tipos" do CONTRIBUTING.md.
+#
+# Para PRs criadas pelo Dependabot, o template em `.github/pull_request_template.md`
+# é injetado automaticamente. Revisores são atribuídos via `.github/CODEOWNERS`
+# baseado nos paths alterados (ex.: bump em services/api-gateway/ chama @hr-core/gateway).
+#
+# =============================================================================
+
+version: 2
+
+updates:
+  # ---------------------------------------------------------------------------
+  # NPM — raiz do monorepo (devDeps de tooling: ESLint, Prettier, husky,
+  # commitlint, TypeScript, vitest-coverage etc.)
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+      - 'scope:tooling'
+    commit-message:
+      prefix: 'chore'
+      prefix-development: 'chore'
+      include: 'scope'
+    versioning-strategy: 'increase'
+    groups:
+      # Lint/format/test movem juntos — agrupa pra reduzir ruído
+      eslint:
+        patterns:
+          - 'eslint'
+          - '@eslint/*'
+          - 'eslint-*'
+          - 'typescript-eslint'
+          - '@typescript-eslint/*'
+      prettier:
+        patterns:
+          - 'prettier'
+          - '*-prettier'
+          - 'eslint-config-prettier'
+      vitest:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+      husky-lint-staged:
+        patterns:
+          - 'husky'
+          - 'lint-staged'
+      commitlint:
+        patterns:
+          - '@commitlint/*'
+      types:
+        patterns:
+          - '@types/*'
+    ignore:
+      # TypeScript major bumps quase sempre exigem migração — manter manual
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
+      # @types/node deve seguir o `engines.node` do projeto — não bumpar major
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+
+  # ---------------------------------------------------------------------------
+  # NPM — todos os workspaces sob services/* (api-gateway, auth, funcionario...)
+  #
+  # O glob `services/*` é resolvido a cada execução; novos serviços adicionados
+  # ao monorepo são cobertos automaticamente, sem precisar editar este arquivo.
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'npm'
+    directories:
+      - '/services/*'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+      - 'scope:service'
+    commit-message:
+      prefix: 'chore'
+      prefix-development: 'chore'
+      include: 'scope'
+    versioning-strategy: 'increase'
+    groups:
+      # Fastify + plugins oficiais movem juntos — releases coordenadas
+      fastify:
+        patterns:
+          - 'fastify'
+          - '@fastify/*'
+          - 'fastify-plugin'
+          - 'fastify-*'
+      # OpenTelemetry tem ~10 pacotes que devem ser bumpados em conjunto
+      opentelemetry:
+        patterns:
+          - '@opentelemetry/*'
+      # Stack de documentação (Swagger + Zod provider)
+      openapi:
+        patterns:
+          - '@fastify/swagger'
+          - '@fastify/swagger-ui'
+          - 'fastify-type-provider-zod'
+          - 'openapi-types'
+      # Tipos
+      types:
+        patterns:
+          - '@types/*'
+    ignore:
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      # Node runtime image — controlado em outro lugar (engines + Dockerfile)
+      - dependency-name: 'node'
+
+  # ---------------------------------------------------------------------------
+  # NPM — packages compartilhados (packages/kafka, packages/mongo, etc.)
+  # Bloco preparado para quando os pacotes forem criados.
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'npm'
+    directories:
+      - '/packages/*'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    open-pull-requests-limit: 5
+    labels:
+      - 'dependencies'
+      - 'scope:package'
+    commit-message:
+      prefix: 'chore'
+      prefix-development: 'chore'
+      include: 'scope'
+    versioning-strategy: 'increase'
+    ignore:
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
+
+  # ---------------------------------------------------------------------------
+  # Docker — imagens base dos Dockerfiles
+  #
+  # Cobre o multi-stage do api-gateway (node:22.20.0-alpine + corepack).
+  # Adicionar entries por serviço conforme cada um ganhar seu Dockerfile.
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'docker'
+    directories:
+      - '/services/*'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    open-pull-requests-limit: 5
+    labels:
+      - 'dependencies'
+      - 'scope:docker'
+    commit-message:
+      prefix: 'build'
+      include: 'scope'
+    ignore:
+      # Não bumpar major do Node sem aprovação explícita — afeta `engines.node`
+      - dependency-name: 'node'
+        update-types: ['version-update:semver-major']
+
+  # ---------------------------------------------------------------------------
+  # Docker Compose — imagens da stack local de observabilidade
+  # (Tempo, Prometheus, Grafana, mock-backend)
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'docker-compose'
+    directories:
+      - '/services/*'
+    schedule:
+      interval: 'monthly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    open-pull-requests-limit: 3
+    labels:
+      - 'dependencies'
+      - 'scope:observability'
+    commit-message:
+      prefix: 'build'
+      include: 'scope'
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions — workflows em .github/workflows/
+  #
+  # Bloco preparado para quando o CI for criado. Sem workflows ainda, este
+  # bloco fica inerte (Dependabot só atua se encontrar referências a actions).
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    open-pull-requests-limit: 5
+    labels:
+      - 'dependencies'
+      - 'scope:ci'
+    commit-message:
+      prefix: 'ci'
+      include: 'scope'
+    groups:
+      # Actions oficiais do GitHub movem juntas
+      github-actions:
+        patterns:
+          - 'actions/*'
+      # Setup actions de ecosystem (pnpm, node etc.)
+      setup-actions:
+        patterns:
+          - 'actions/setup-*'
+          - 'pnpm/action-setup'
