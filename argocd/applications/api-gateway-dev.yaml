@@ -1,0 +1,72 @@
+# Application Argo CD para o api-gateway no ambiente dev.
+# Apontamento: manifests/api-gateway/overlays/dev (Kustomize).
+#
+# Sincronização automática:
+#   - Argo CD observa o branch `main` do repo
+#   - Qualquer commit que altere manifests/api-gateway/** dispara sync
+#   - prune=true remove recursos que saírem do Git
+#   - selfHeal=true reverte alterações manuais no cluster
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: api-gateway-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/part-of: hr-core
+    app.kubernetes.io/environment: dev
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: hr-core
+
+  source:
+    repoURL: https://github.com/diego64/hr-core.git
+    targetRevision: main
+    path: manifests/api-gateway/overlays/dev
+    kustomize:
+      # Permite que o Argo CD Image Updater (opcional) commite tags novas.
+      forceCommonAnnotations: false
+      forceCommonLabels: false
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: hr-core-dev
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      # Cria o namespace se não existir (mesmo já tendo namespace.yaml no overlay
+      # — defensivo contra ordem de aplicação).
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Ignora diferenças de campos gerenciados por outros controllers
+  # (HPA mutando replicas, controllers anotando metadata, etc).
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: ''
+      kind: Secret
+      # Secret é gerenciado fora do Git (Sealed/External Secrets ou kubectl).
+      # Argo CD não deve marcar como OutOfSync se o conteúdo for diferente.
+      name: api-gateway
+      jsonPointers:
+        - /data
+        - /stringData
+
+  revisionHistoryLimit: 5

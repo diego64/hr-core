@@ -1,0 +1,21 @@
+# Overrides de env específicos de dev:
+# - LOG_LEVEL=debug para diagnóstico
+# - CORS aberto pro frontend local (Vite default :5173)
+# - Rate limit alto para não atrapalhar smoke tests
+# - URLs dos downstreams apontando para o mesmo namespace dev (hr-core-dev)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway
+data:
+  LOG_LEVEL: 'debug'
+
+  CORS_ORIGINS: 'http://localhost:5173,http://localhost:3000,http://api-gateway.dev.hr-core.local'
+  CORS_CREDENTIALS: 'true'
+
+  RATE_LIMIT_MAX: '1000'
+
+  FUNCIONARIO_SERVICE_URL: 'http://funcionario.hr-core-dev.svc.cluster.local:4001'
+  FERIAS_SERVICE_URL: 'http://ferias.hr-core-dev.svc.cluster.local:4002'
+  AVALIACAO_SERVICE_URL: 'http://avaliacao.hr-core-dev.svc.cluster.local:4003'
+  FOLHA_PAGAMENTO_SERVICE_URL: 'http://folha-de-pagamento.hr-core-dev.svc.cluster.local:4004'

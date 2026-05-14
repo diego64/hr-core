@@ -1,0 +1,88 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: hr-core
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: hr-core
+  # Evita deleção acidental do projeto enquanto houver apps dentro dele.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: |
+    Projeto Argo CD para todos os serviços do HR Core (api-gateway,
+    auth, funcionario, ferias, avaliacao, folha-de-pagamento e
+    pacotes compartilhados). Restringe sources/dest/recursos por
+    segurança.
+
+  # Fontes Git permitidas — apenas o monorepo oficial.
+  sourceRepos:
+    - https://github.com/diego64/hr-core.git
+    - https://github.com/diego64/hr-core
+
+  # Clusters e namespaces onde Apps podem fazer deploy.
+  # Adicionar entradas conforme novos ambientes/clusters.
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: hr-core-dev
+    - server: https://kubernetes.default.svc
+      namespace: hr-core
+    - server: https://kubernetes.default.svc
+      namespace: argocd
+
+  # Recursos cluster-scoped permitidos (Namespace, ClusterRole, etc.).
+  # Limitado a Namespace para impedir que um App crie ClusterRoleBinding.
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+
+  # Recursos namespace-scoped permitidos. Cobre o que o api-gateway usa
+  # hoje + o que serviços futuros vão precisar.
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+    - group: ''
+      kind: Service
+    - group: ''
+      kind: ServiceAccount
+    - group: apps
+      kind: Deployment
+    - group: apps
+      kind: StatefulSet
+    - group: networking.k8s.io
+      kind: Ingress
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: policy
+      kind: PodDisruptionBudget
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+    - group: batch
+      kind: Job
+    - group: batch
+      kind: CronJob
+    - group: bitnami.com
+      kind: SealedSecret
+    - group: external-secrets.io
+      kind: ExternalSecret
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+    - group: monitoring.coreos.com
+      kind: PodMonitor
+    - group: argoproj.io
+      kind: Application
+
+  # Roles do projeto — útil para CI publicar status de sync sem dar acesso global.
+  # Por padrão sem roles; adicionar conforme necessário.
+  roles: []
+
+  # Janelas de sync — bloqueia deploys em horário não-comercial em prod
+  # (configurar quando o overlay de prod existir).
+  syncWindows: []
+
+  # Política de orfanização — recursos órfãos são alertados mas não removidos
+  # automaticamente.
+  orphanedResources:
+    warn: true

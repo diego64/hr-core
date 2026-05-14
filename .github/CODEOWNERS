@@ -28,27 +28,20 @@
 #   https://docs.github.com/en/repositories/managing-your-repositories-settings-and-customizations/customizing-your-repository/about-code-owners
 #
 # =============================================================================
-# ⚠️  PLACEHOLDERS — substituir antes de fazer merge
+# Estado atual: single maintainer
 # =============================================================================
 #
-# Os handles abaixo (@hr-core-*) são placeholders. Antes de mergear este
-# arquivo, substituir pelos handles reais do GitHub. Owners desconhecidos
-# são ignorados — então o arquivo não quebra, mas também não atribui ninguém.
+# Todos os paths são atribuídos a @diego64. Quando o time crescer, substituir
+# por teams da organização (ex.: @hr-core/gateway, @hr-core/security) — owners
+# inexistentes são silenciosamente ignorados, então é seguro fazer a mudança
+# gradualmente.
 #
-# Sugestão de teams a criar na organização:
-#   @hr-core/platform       — manutenção do monorepo, CI, infra compartilhada
-#   @hr-core/backend-leads  — review arquitetural de qualquer serviço
-#   @hr-core/security       — auth, JWT, segredos, RBAC
-#   @hr-core/observability  — logging, tracing, métricas, dashboards
-#   @hr-core/gateway        — equipe do api-gateway
-#   @hr-core/auth-team      — equipe do auth-service
-#   @hr-core/funcionarios   — equipe do funcionario-service
-#   @hr-core/ferias         — equipe do ferias-service
-#   @hr-core/avaliacao      — equipe do avaliacao-service
-#   @hr-core/folha          — equipe do folha-de-pagamento-service
-#
-# Enquanto a estrutura de teams não existir, usar handles individuais:
-#   *  @diegoferreira1964
+# Limitação do GitHub: o autor da PR NÃO pode ser reviewer dela. Em PRs que
+# @diego64 abre, o CODEOWNERS é aplicado mas a auto-atribuição é pulada (a
+# própria PR fica sem reviewer obrigatório). Solução enquanto o time é de uma
+# pessoa: usar Branch Protection com "Require approval = 0" + outras checks
+# (CI verde, status checks). Quando outra pessoa abrir PR, @diego64 vira
+# reviewer automático.
 #
 # =============================================================================
 
@@ -56,32 +49,32 @@
 # -----------------------------------------------------------------------------
 # Default — qualquer coisa que não case com regra mais específica
 # -----------------------------------------------------------------------------
-*                                          @hr-core/platform
+*                                          @diego64
 
 
 # -----------------------------------------------------------------------------
 # Microsserviços — ownership por serviço
 # -----------------------------------------------------------------------------
-/services/api-gateway/                     @hr-core/gateway @hr-core/platform
-/services/auth/                            @hr-core/auth-team @hr-core/security
-/services/funcionario/                     @hr-core/funcionarios
-/services/ferias/                          @hr-core/ferias
-/services/avaliacao/                       @hr-core/avaliacao
-/services/folha-de-pagamento/              @hr-core/folha
-/services/notification/                    @hr-core/platform
-/services/reports/                         @hr-core/platform
-/services/dashboard/                       @hr-core/platform
+/services/api-gateway/                     @diego64
+/services/auth/                            @diego64
+/services/funcionario/                     @diego64
+/services/ferias/                          @diego64
+/services/avaliacao/                       @diego64
+/services/folha-de-pagamento/              @diego64
+/services/notification/                    @diego64
+/services/reports/                         @diego64
+/services/dashboard/                       @diego64
 
 
 # -----------------------------------------------------------------------------
 # Pacotes compartilhados — qualquer time consome, então review é da plataforma
 # -----------------------------------------------------------------------------
-/packages/                                 @hr-core/platform @hr-core/backend-leads
-/packages/kafka/                           @hr-core/platform @hr-core/backend-leads
-/packages/mongo/                           @hr-core/platform @hr-core/backend-leads
-/packages/logger/                          @hr-core/platform @hr-core/observability
-/packages/jwt/                             @hr-core/security @hr-core/backend-leads
-/packages/domain/                          @hr-core/backend-leads
+/packages/                                 @diego64
+/packages/kafka/                           @diego64
+/packages/mongo/                           @diego64
+/packages/logger/                          @diego64
+/packages/jwt/                             @diego64
+/packages/domain/                          @diego64
 
 
 # -----------------------------------------------------------------------------
@@ -89,66 +82,66 @@
 # -----------------------------------------------------------------------------
 
 # Autenticação, autorização, RBAC, JWT, JWKS — qualquer toque chama security
-**/auth.ts                                 @hr-core/security
-**/auth.test.ts                            @hr-core/security
-**/rbac.ts                                 @hr-core/security
-**/jwks*                                   @hr-core/security
-**/jwt*                                    @hr-core/security
-**/middlewares/auth*                       @hr-core/security
-**/plugins/auth*                           @hr-core/security
+**/auth.ts                                 @diego64
+**/auth.test.ts                            @diego64
+**/rbac.ts                                 @diego64
+**/jwks*                                   @diego64
+**/jwt*                                    @diego64
+**/middlewares/auth*                       @diego64
+**/plugins/auth*                           @diego64
 
 # Eventos Kafka (producers e consumers) — contrato cross-serviço
-**/events/                                 @hr-core/platform @hr-core/backend-leads
-**/kafka/                                  @hr-core/platform @hr-core/backend-leads
+**/events/                                 @diego64
+**/kafka/                                  @diego64
 
 # Observabilidade — métricas, traces, dashboards
-**/tracing.ts                              @hr-core/observability
-**/plugins/metrics*                        @hr-core/observability
-**/docker/dashboards/                      @hr-core/observability
-**/docker/grafana-*.yml                    @hr-core/observability
-**/docker/prometheus.yml                   @hr-core/observability
-**/docker/tempo.yaml                       @hr-core/observability
+**/tracing.ts                              @diego64
+**/plugins/metrics*                        @diego64
+**/docker/dashboards/                      @diego64
+**/docker/grafana-*.yml                    @diego64
+**/docker/prometheus.yml                   @diego64
+**/docker/tempo.yaml                       @diego64
 
 
 # -----------------------------------------------------------------------------
 # Infraestrutura — Docker, compose, CI/CD
 # -----------------------------------------------------------------------------
-**/Dockerfile                              @hr-core/platform
-**/docker-compose.yml                      @hr-core/platform
-**/.dockerignore                           @hr-core/platform
-/.github/workflows/                        @hr-core/platform
-/.github/actions/                          @hr-core/platform
+**/Dockerfile                              @diego64
+**/docker-compose.yml                      @diego64
+**/.dockerignore                           @diego64
+/.github/workflows/                        @diego64
+/.github/actions/                          @diego64
 
 
 # -----------------------------------------------------------------------------
 # Tooling e config raiz — qualquer mudança aqui afeta o monorepo inteiro
 # -----------------------------------------------------------------------------
-/package.json                              @hr-core/platform
-/pnpm-lock.yaml                            @hr-core/platform
-/pnpm-workspace.yaml                       @hr-core/platform
-/tsconfig.json                             @hr-core/platform
-/tsconfig.build.json                       @hr-core/platform
-/eslint.config.js                          @hr-core/platform
-/.prettierrc                               @hr-core/platform
-/.prettierignore                           @hr-core/platform
-/commitlint.config.cjs                     @hr-core/platform
-/.husky/                                   @hr-core/platform
+/package.json                              @diego64
+/pnpm-lock.yaml                            @diego64
+/pnpm-workspace.yaml                       @diego64
+/tsconfig.json                             @diego64
+/tsconfig.build.json                       @diego64
+/eslint.config.js                          @diego64
+/.prettierrc                               @diego64
+/.prettierignore                           @diego64
+/commitlint.config.cjs                     @diego64
+/.husky/                                   @diego64
 
 
 # -----------------------------------------------------------------------------
 # Documentação crítica — exige review da plataforma + liderança técnica
 # -----------------------------------------------------------------------------
-/CLAUDE.md                                 @hr-core/platform @hr-core/backend-leads
-/CONTRIBUTING.md                           @hr-core/platform
-/README.md                                 @hr-core/platform
-/.gitmessage.txt                           @hr-core/platform
-/.github/pull_request_template.md          @hr-core/platform
-/.github/CODEOWNERS                        @hr-core/platform
-/.github/ISSUE_TEMPLATE/                   @hr-core/platform
+/CLAUDE.md                                 @diego64
+/CONTRIBUTING.md                           @diego64
+/README.md                                 @diego64
+/.gitmessage.txt                           @diego64
+/.github/pull_request_template.md          @diego64
+/.github/CODEOWNERS                        @diego64
+/.github/ISSUE_TEMPLATE/                   @diego64
 
 
 # -----------------------------------------------------------------------------
 # Segurança operacional — secrets, .env templates
 # -----------------------------------------------------------------------------
-**/.env.example                            @hr-core/security @hr-core/platform
-**/secrets/                                @hr-core/security
+**/.env.example                            @diego64
+**/secrets/                                @diego64

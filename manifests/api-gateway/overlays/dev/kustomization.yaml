@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Coloca TODOS os recursos no namespace de dev.
+namespace: hr-core-dev
+
+# Labels específicas do overlay; herda as do base.
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/environment: dev
+
+commonAnnotations:
+  hr-core.local/environment: dev
+
+resources:
+  - ../../base
+  - namespace.yaml
+
+patches:
+  - path: patches/deployment-patch.yaml
+    target:
+      kind: Deployment
+      name: api-gateway
+  - path: patches/ingress-patch.yaml
+    target:
+      kind: Ingress
+      name: api-gateway
+  - path: patches/configmap-patch.yaml
+    target:
+      kind: ConfigMap
+      name: api-gateway
+
+# Em dev, override do tag explicitamente; em prod, gerenciado por Argo CD
+# Image Updater ou pipeline de CI que commita o tag.
+images:
+  - name: ghcr.io/diego64/hr-core/api-gateway
+    newTag: dev-latest
