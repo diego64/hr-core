@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hr-core-dev
+  labels:
+    app.kubernetes.io/name: hr-core-dev
+    app.kubernetes.io/part-of: hr-core
+    app.kubernetes.io/environment: dev
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

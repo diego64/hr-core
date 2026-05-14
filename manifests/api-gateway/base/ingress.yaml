@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-gateway
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/part-of: hr-core
+  annotations:
+    # Anotações específicas do ingress-nginx; ajustar se usar outro controller.
+    nginx.ingress.kubernetes.io/proxy-body-size: '10m'
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '60'
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '60'
+    # Bloqueia exposição pública de /metrics (apenas rede interna do cluster).
+    nginx.ingress.kubernetes.io/server-snippet: |
+      location = /metrics {
+        return 404;
+      }
+spec:
+  ingressClassName: nginx
+  rules:
+    # PLACEHOLDER: substituir pelo host real do ambiente nos overlays.
+    - host: api-gateway.hr-core.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  name: http

@@ -1,0 +1,17 @@
+# Host de dev. Substituir pelo domínio real quando houver TLS+DNS.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-gateway
+spec:
+  rules:
+    - host: api-gateway.dev.hr-core.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  name: http

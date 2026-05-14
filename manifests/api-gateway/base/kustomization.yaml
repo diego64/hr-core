@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Labels comuns aplicadas em TODOS os recursos do base.
+# Overlays podem adicionar mais via outro bloco `labels:`.
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: api-gateway
+      app.kubernetes.io/component: gateway
+      app.kubernetes.io/part-of: hr-core
+      app.kubernetes.io/managed-by: kustomize
+
+resources:
+  - serviceaccount.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - networkpolicy.yaml
+  - poddisruptionbudget.yaml
+  # secret.example.yaml e namespace NÃO entram aqui:
+  #   - Secret real é criado fora do Git (Sealed/External Secrets ou kubectl)
+  #   - Namespace é definido em cada overlay (hr-core-dev, hr-core-prod, ...)
