@@ -1,0 +1,58 @@
+# .dockerignore na raiz do monorepo (que é o build context dos serviços).
+# Patterns relativos a `.` (raiz do repo).
+
+# Build outputs
+**/dist/
+**/coverage/
+**/*.tsbuildinfo
+
+# Dependências e caches
+**/node_modules/
+.pnpm-store/
+
+# Ambiente local
+**/.env
+**/.env.local
+**/.env.*.local
+
+# IDE / OS / VCS
+.git/
+.github/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+**/*.log
+
+# Documentação e assets que não vão para a imagem
+**/*.md
+**/README.md
+**/image/
+docs/
+
+# Testes (não vão pro runtime; o build já valida types)
+**/*.test.ts
+**/*.spec.ts
+**/test/
+**/e2e/
+
+# Postman / artefatos de QA
+hr-core.postman_collection.json
+hr-core.postman_environment.json
+
+# Ferramentas de dev
+.husky/
+.editorconfig
+.prettierrc
+.prettierignore
+.dockerignore
+eslint.config.js
+commitlint.config.cjs
+**/vitest.config.ts
+**/vitest.e2e.config.ts
+
+# Compose e configs de observabilidade (não vão pra imagem do gateway)
+**/docker-compose.yml
+**/docker-compose.*.yml
+**/docker/
+**/scripts/

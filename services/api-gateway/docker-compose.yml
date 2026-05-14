@@ -1,0 +1,137 @@
+# Stack local da api-gateway.
+# Inclui:
+#   - api-gateway     : build a partir do Dockerfile (multi-stage), runtime de produção
+#   - mock-backend    : http-echo que recebe qualquer rota (stand-in dos microserviços)
+#   - tempo           : Grafana Tempo, recebe traces via OTLP HTTP
+#   - prometheus      : raspa /metrics do gateway
+#   - grafana         : UI para metrics + traces (login anônimo como admin)
+#
+# Subir tudo:    docker compose --project-directory . -f docker-compose.yml up -d --build
+# Derrubar tudo: docker compose --project-directory . -f docker-compose.yml down -v
+#
+# JWKS: não há mock — para testar rotas autenticadas (`/api/v1/*`), aponte
+# AUTH_JWKS_URL para um Auth Service real ou faça um mock manualmente.
+# Os endpoints públicos (`/health`, `/ready`, `/metrics`) funcionam sem JWKS.
+
+name: hr-core-api-gateway
+
+services:
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: services/api-gateway/Dockerfile
+    image: hr-core/api-gateway:local
+    container_name: hr-core-api-gateway
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: '3000'
+      LOG_LEVEL: info
+
+      AUTH_JWKS_URL: http://auth.invalid/.well-known/jwks.json
+      AUTH_JWT_ISSUER: https://auth.hr-core.local
+      AUTH_JWT_AUDIENCE: hr-core
+
+      RATE_LIMIT_MAX: '1000'
+      RATE_LIMIT_WINDOW_MS: '60000'
+
+      CORS_ORIGINS: 'http://localhost:5173,http://localhost:3000'
+      CORS_CREDENTIALS: 'true'
+      CORS_MAX_AGE: '86400'
+
+      OTEL_ENABLED: 'true'
+      OTEL_SERVICE_NAME: api-gateway
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+
+      FUNCIONARIO_SERVICE_URL: http://mock-backend:8080
+      FERIAS_SERVICE_URL: http://mock-backend:8080
+      AVALIACAO_SERVICE_URL: http://mock-backend:8080
+      FOLHA_PAGAMENTO_SERVICE_URL: http://mock-backend:8080
+    depends_on:
+      tempo:
+        condition: service_started
+      mock-backend:
+        condition: service_started
+    networks:
+      - hr-core
+
+  mock-backend:
+    image: mendhak/http-https-echo:40
+    container_name: hr-core-mock-backend
+    restart: unless-stopped
+    environment:
+      HTTP_PORT: '8080'
+    expose:
+      - '8080'
+    networks:
+      - hr-core
+
+  tempo:
+    image: grafana/tempo:2.10.5
+    container_name: hr-core-tempo
+    restart: unless-stopped
+    command: ['-config.file=/etc/tempo.yaml']
+    volumes:
+      - ./docker/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - '3200:3200' # Tempo HTTP API
+      - '4318:4318' # OTLP HTTP
+    networks:
+      - hr-core
+
+  prometheus:
+    image: prom/prometheus:v3.11.3
+    container_name: hr-core-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=2h'
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - '9090:9090'
+    networks:
+      - hr-core
+    depends_on:
+      - api-gateway
+
+  grafana:
+    image: grafana/grafana:13.0.1
+    container_name: hr-core-grafana
+    restart: unless-stopped
+    environment:
+      # Credenciais do admin built-in (renomeado para "administrador").
+      # Senha local; trocar antes de qualquer exposição externa.
+      GF_SECURITY_ADMIN_USER: administrador
+      GF_SECURITY_ADMIN_PASSWORD: 1qaz2wsx12
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+      GF_AUTH_DISABLE_LOGIN_FORM: 'false'
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor
+    volumes:
+      - ./docker/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./docker/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./docker/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - '3001:3000'
+    networks:
+      - hr-core
+    depends_on:
+      - prometheus
+      - tempo
+
+volumes:
+  tempo-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  hr-core:
+    driver: bridge

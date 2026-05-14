@@ -10,20 +10,43 @@
   },
   "packageManager": "pnpm@11.0.9",
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "prepare": "husky"
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky && pnpm prepare:commit-template",
+    "prepare:commit-template": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git config commit.template .gitmessage.txt || true"
   },
   "lint-staged": {
-    "*.ts": [
-      "pnpm typecheck"
+    "*.{ts,js,cjs,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
     ]
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.0",
     "@commitlint/config-conventional": "^21.0.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^25.6.2",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.4",
-    "typescript": "^6.0.3"
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "protobufjs"
+    ]
   }
 }

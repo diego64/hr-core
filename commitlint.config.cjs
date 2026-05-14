@@ -35,8 +35,8 @@ module.exports = {
         'docs',
         'release',
         'workspace',
-        'tooling'
-      ]
-    ]
-  }
+        'tooling',
+      ],
+    ],
+  },
 }

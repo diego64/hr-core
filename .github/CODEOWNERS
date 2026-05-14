@@ -1,0 +1,154 @@
+# =============================================================================
+# CODEOWNERS — HR Core
+# =============================================================================
+#
+# Este arquivo controla atribuição automática de reviewers em PRs do GitHub.
+# Quando uma PR toca um path coberto aqui, os owners correspondentes são
+# automaticamente adicionados como reviewers.
+#
+# Sintaxe:
+#   <pattern>   <owner1> <owner2> ...
+#
+# Owners podem ser:
+#   @usuario             — handle individual do GitHub
+#   @organizacao/equipe  — equipe do GitHub (exige permissão write no repo)
+#   email@exemplo.com    — notificação por e-mail (sem auto-assign)
+#
+# Regras importantes:
+#   - Última regra que casa com o path "vence" (override por especificidade)
+#   - Wildcards: *, **, ?
+#   - Paths são relativos à raiz do repo
+#   - Owner inexistente é silenciosamente ignorado (sem erro)
+#
+# Branch protection: para que o CODEOWNERS seja OBRIGATÓRIO em PRs, habilite
+# em Settings → Branches → Branch protection rules → "Require review from
+# Code Owners" no branch `main` (e/ou `develop`).
+#
+# Documentação oficial:
+#   https://docs.github.com/en/repositories/managing-your-repositories-settings-and-customizations/customizing-your-repository/about-code-owners
+#
+# =============================================================================
+# ⚠️  PLACEHOLDERS — substituir antes de fazer merge
+# =============================================================================
+#
+# Os handles abaixo (@hr-core-*) são placeholders. Antes de mergear este
+# arquivo, substituir pelos handles reais do GitHub. Owners desconhecidos
+# são ignorados — então o arquivo não quebra, mas também não atribui ninguém.
+#
+# Sugestão de teams a criar na organização:
+#   @hr-core/platform       — manutenção do monorepo, CI, infra compartilhada
+#   @hr-core/backend-leads  — review arquitetural de qualquer serviço
+#   @hr-core/security       — auth, JWT, segredos, RBAC
+#   @hr-core/observability  — logging, tracing, métricas, dashboards
+#   @hr-core/gateway        — equipe do api-gateway
+#   @hr-core/auth-team      — equipe do auth-service
+#   @hr-core/funcionarios   — equipe do funcionario-service
+#   @hr-core/ferias         — equipe do ferias-service
+#   @hr-core/avaliacao      — equipe do avaliacao-service
+#   @hr-core/folha          — equipe do folha-de-pagamento-service
+#
+# Enquanto a estrutura de teams não existir, usar handles individuais:
+#   *  @diegoferreira1964
+#
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Default — qualquer coisa que não case com regra mais específica
+# -----------------------------------------------------------------------------
+*                                          @hr-core/platform
+
+
+# -----------------------------------------------------------------------------
+# Microsserviços — ownership por serviço
+# -----------------------------------------------------------------------------
+/services/api-gateway/                     @hr-core/gateway @hr-core/platform
+/services/auth/                            @hr-core/auth-team @hr-core/security
+/services/funcionario/                     @hr-core/funcionarios
+/services/ferias/                          @hr-core/ferias
+/services/avaliacao/                       @hr-core/avaliacao
+/services/folha-de-pagamento/              @hr-core/folha
+/services/notification/                    @hr-core/platform
+/services/reports/                         @hr-core/platform
+/services/dashboard/                       @hr-core/platform
+
+
+# -----------------------------------------------------------------------------
+# Pacotes compartilhados — qualquer time consome, então review é da plataforma
+# -----------------------------------------------------------------------------
+/packages/                                 @hr-core/platform @hr-core/backend-leads
+/packages/kafka/                           @hr-core/platform @hr-core/backend-leads
+/packages/mongo/                           @hr-core/platform @hr-core/backend-leads
+/packages/logger/                          @hr-core/platform @hr-core/observability
+/packages/jwt/                             @hr-core/security @hr-core/backend-leads
+/packages/domain/                          @hr-core/backend-leads
+
+
+# -----------------------------------------------------------------------------
+# Áreas sensíveis — exigem review extra independente do serviço
+# -----------------------------------------------------------------------------
+
+# Autenticação, autorização, RBAC, JWT, JWKS — qualquer toque chama security
+**/auth.ts                                 @hr-core/security
+**/auth.test.ts                            @hr-core/security
+**/rbac.ts                                 @hr-core/security
+**/jwks*                                   @hr-core/security
+**/jwt*                                    @hr-core/security
+**/middlewares/auth*                       @hr-core/security
+**/plugins/auth*                           @hr-core/security
+
+# Eventos Kafka (producers e consumers) — contrato cross-serviço
+**/events/                                 @hr-core/platform @hr-core/backend-leads
+**/kafka/                                  @hr-core/platform @hr-core/backend-leads
+
+# Observabilidade — métricas, traces, dashboards
+**/tracing.ts                              @hr-core/observability
+**/plugins/metrics*                        @hr-core/observability
+**/docker/dashboards/                      @hr-core/observability
+**/docker/grafana-*.yml                    @hr-core/observability
+**/docker/prometheus.yml                   @hr-core/observability
+**/docker/tempo.yaml                       @hr-core/observability
+
+
+# -----------------------------------------------------------------------------
+# Infraestrutura — Docker, compose, CI/CD
+# -----------------------------------------------------------------------------
+**/Dockerfile                              @hr-core/platform
+**/docker-compose.yml                      @hr-core/platform
+**/.dockerignore                           @hr-core/platform
+/.github/workflows/                        @hr-core/platform
+/.github/actions/                          @hr-core/platform
+
+
+# -----------------------------------------------------------------------------
+# Tooling e config raiz — qualquer mudança aqui afeta o monorepo inteiro
+# -----------------------------------------------------------------------------
+/package.json                              @hr-core/platform
+/pnpm-lock.yaml                            @hr-core/platform
+/pnpm-workspace.yaml                       @hr-core/platform
+/tsconfig.json                             @hr-core/platform
+/tsconfig.build.json                       @hr-core/platform
+/eslint.config.js                          @hr-core/platform
+/.prettierrc                               @hr-core/platform
+/.prettierignore                           @hr-core/platform
+/commitlint.config.cjs                     @hr-core/platform
+/.husky/                                   @hr-core/platform
+
+
+# -----------------------------------------------------------------------------
+# Documentação crítica — exige review da plataforma + liderança técnica
+# -----------------------------------------------------------------------------
+/CLAUDE.md                                 @hr-core/platform @hr-core/backend-leads
+/CONTRIBUTING.md                           @hr-core/platform
+/README.md                                 @hr-core/platform
+/.gitmessage.txt                           @hr-core/platform
+/.github/pull_request_template.md          @hr-core/platform
+/.github/CODEOWNERS                        @hr-core/platform
+/.github/ISSUE_TEMPLATE/                   @hr-core/platform
+
+
+# -----------------------------------------------------------------------------
+# Segurança operacional — secrets, .env templates
+# -----------------------------------------------------------------------------
+**/.env.example                            @hr-core/security @hr-core/platform
+**/secrets/                                @hr-core/security

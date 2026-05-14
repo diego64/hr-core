@@ -1,0 +1,94 @@
+
+
+# --- HR Core — Conventional Commits ----------------------------------------
+#
+# Formato:
+#   <type>(<scope>): <subject>
+#
+#   <body opcional — o "porquê", contexto, decisão. Linhas <= 120 chars.>
+#
+#   <footer opcional — BREAKING CHANGE, Refs, Co-Authored-By>
+#
+# ---------------------------------------------------------------------------
+#
+# Subject (acima da primeira linha em branco):
+#   - Imperativo: "adicionar", "corrigir", "remover" (não "adicionei"/"adicionado")
+#   - Minúsculo, sem ponto final
+#   - Até 100 chars contando "<type>(<scope>): "
+#   - Responde "este commit faz O QUÊ?"
+#
+# Body:
+#   - Explica POR QUÊ, não O QUE (o diff já mostra o quê)
+#   - Linhas até 120 chars
+#   - Separe parágrafos com linha em branco
+#   - Inclua trade-offs ou alternativas descartadas quando não-óbvio
+#
+# Footer:
+#   - "BREAKING CHANGE: <descrição>"  — força bump major no SemVer
+#   - "Refs: HR-123, #456"            — links de issues
+#   - "Co-Authored-By: Nome <email>"  — colaboradores
+#
+# ---------------------------------------------------------------------------
+# Tipos válidos (config-conventional):
+#
+#   feat       Nova funcionalidade visível ao usuário/cliente
+#   fix        Correção de bug
+#   refactor   Mudança de código sem alterar comportamento externo
+#   perf       Otimização de performance
+#   docs       Apenas documentação (README, comentários, CLAUDE.md)
+#   test       Adição ou ajuste de testes
+#   build      Build, dependências, Dockerfile, tsconfig
+#   ci         Pipelines CI/CD, GitHub Actions, Argo CD
+#   chore      Tarefas de manutenção sem impacto em src/
+#   style      Formatação, ponto-e-vírgula (raro com Prettier configurado)
+#   revert     Reverte commit anterior — body deve citar o hash revertido
+#
+# ---------------------------------------------------------------------------
+# Escopos válidos (definidos em commitlint.config.cjs, kebab-case):
+#
+#   Microserviços:
+#     gateway, auth, funcionario, ferias, avaliacao,
+#     folha-pagamento, notification, reports, dashboard
+#
+#   Pacotes compartilhados (packages/*):
+#     kafka, mongo, logger, jwt, domain, config
+#
+#   Meta (raiz do monorepo):
+#     deps, ci, docs, release, workspace, tooling
+#
+# ---------------------------------------------------------------------------
+# Exemplos:
+#
+#   feat(gateway): documentar rotas via Swagger UI em /docs
+#
+#   Adiciona @fastify/swagger + swagger-ui ao api-gateway. A spec OpenAPI
+#   3.1 expõe rotas públicas (/health, /ready, /metrics) com schemas Zod e
+#   o contorno do proxy (/api/v1/*) via transformObject — sem replicar o
+#   contrato dos downstreams.
+#
+#   Refs: HR-42
+#
+# ---------------------------------------------------------------------------
+#
+#   fix(ferias): impedir sobreposição de períodos para o mesmo funcionário
+#
+#   Antes, dois períodos de férias podiam coexistir se a requisição chegasse
+#   simultaneamente — a checagem era pré-insert sem lock. Agora a verificação
+#   roda em transação com índice único composto (funcionarioId + período).
+#
+#   Refs: #128
+#
+# ---------------------------------------------------------------------------
+#
+#   refactor(auth)!: remover validação de JWT em memória em favor do JWKS
+#
+#   BREAKING CHANGE: variável AUTH_PUBLIC_KEY removida do .env. Configurar
+#   AUTH_JWKS_URL apontando para o endpoint do Auth Service.
+#
+# ---------------------------------------------------------------------------
+# Para habilitar este template como default em commits sem -m:
+#
+#   git config commit.template .gitmessage.txt
+#
+# Linhas começando com # são ignoradas pelo Git ao salvar a mensagem.
+# ---------------------------------------------------------------------------

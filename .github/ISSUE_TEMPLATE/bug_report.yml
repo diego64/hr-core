@@ -1,0 +1,161 @@
+name: 🐛 Bug Report
+description: Reporte um comportamento inesperado em um dos serviços do HR Core
+title: 'bug(<scope>): <resumo curto e específico>'
+labels: ['bug', 'triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar. Antes de continuar:
+
+        - Confirme que **não é uma dúvida arquitetural** — para isso, leia [`CLAUDE.md`](../blob/main/CLAUDE.md).
+        - Pesquise [issues existentes](../issues?q=is%3Aissue) antes de abrir uma nova.
+        - Se for falha de segurança (auth, JWT, leak de dados), **NÃO abra issue pública** — siga o procedimento em SECURITY.md (ou contate diretamente).
+
+        Quanto mais específico você for, mais rápido o bug é triado e corrigido.
+
+  - type: dropdown
+    id: service
+    attributes:
+      label: Serviço afetado
+      description: Em qual serviço o bug acontece? Se mais de um, escolha o "ponto de entrada" e detalhe nos próximos campos.
+      options:
+        - api-gateway
+        - auth
+        - funcionario
+        - ferias
+        - avaliacao
+        - folha-de-pagamento
+        - notification
+        - reports
+        - dashboard
+        - packages/kafka
+        - packages/mongo
+        - packages/logger
+        - packages/jwt
+        - packages/domain
+        - infra (Docker, CI, observabilidade)
+        - Outro / Não sei
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severidade
+      description: Qual o impacto?
+      options:
+        - '🔴 Crítica — serviço indisponível ou perda de dados em produção'
+        - '🟠 Alta — funcionalidade principal quebrada, sem workaround'
+        - '🟡 Média — funcionalidade quebrada com workaround conhecido'
+        - '🟢 Baixa — comportamento incorreto sem impacto operacional'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Ambiente
+      options:
+        - Desenvolvimento local (compose / pnpm dev)
+        - Test (CI)
+        - Staging
+        - Produção
+        - Outro
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição
+      description: O que está acontecendo? Seja específico — "está quebrado" não ajuda.
+      placeholder: |
+        Ex.: ao chamar POST /api/v1/ferias com dataInicio anterior ao período aquisitivo, o gateway retorna 500 em vez de 400.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      description: Comandos `curl`, payloads, sequência de cliques — tudo que permite reproduzir.
+      placeholder: |
+        1. Subir a stack local: `pnpm compose:up`
+        2. Gerar JWT válido para um funcionário com período aquisitivo aberto em 2026-01-15
+        3. Executar:
+        ```bash
+        curl -X POST http://localhost:3000/api/v1/ferias \
+          -H 'Authorization: Bearer <jwt>' \
+          -H 'Content-Type: application/json' \
+          -d '{"dataInicio":"2025-12-01","dataFim":"2025-12-15"}'
+        ```
+        4. Observar status code e response body.
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+      placeholder: |
+        Ex.: 400 com RFC 7807 e detail "dataInicio anterior ao período aquisitivo válido".
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamento observado
+      placeholder: |
+        Ex.: 500 com RFC 7807 e detail "Internal server error". Stack no log do gateway aponta TypeError em ferias.service.ts:42.
+    validations:
+      required: true
+
+  - type: input
+    id: trace_id
+    attributes:
+      label: traceId / X-Trace-Id
+      description: Se reproduziu em staging/prod, cole o `traceId` da resposta de erro (também aparece em todo log estruturado).
+      placeholder: '8a1c4f63-9c2e-4f3b-9a2e-3f8c1d2b7a6e'
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / saída relevante
+      description: Cole apenas o trecho relevante (não dump inteiro). Use ``` para formatar.
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: service_version
+    attributes:
+      label: Versão / commit do serviço
+      description: Tag, commit hash ou versão do `package.json`.
+      placeholder: '0.1.0 (commit 7d2743a) ou main@HEAD'
+    validations:
+      required: false
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround conhecido
+      description: Se você já achou jeito de contornar, descreva.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmações
+      options:
+        - label: Pesquisei issues existentes e este bug ainda não foi reportado
+          required: true
+        - label: Este não é um problema de segurança (se for, vou usar canal privado)
+          required: true
+        - label: Verifiquei se não é dúvida coberta pelo CLAUDE.md
+          required: true
