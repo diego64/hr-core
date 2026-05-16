@@ -309,6 +309,7 @@ Detalhes arquiteturais — incluindo padrões de TypeScript, MongoDB driver nati
 - ✅ **Eventos são imutáveis** — payload não muda depois de publicado (criar `evento.v2` se precisar)
 - ✅ **`strict: true`** mantido no `tsconfig.json`
 - ✅ **Imports relativos com extensão `.js`** (exigência do `module: NodeNext`)
+- ✅ **Cada microsserviço inclui o `LICENSE` na raiz** (cópia da AGPL-3.0 da raiz do monorepo) — exigência da AGPL-3.0 que cada cópia distribuída acompanhe a licença. O Dockerfile copia o `LICENSE` pra imagem final.
 
 ---
 

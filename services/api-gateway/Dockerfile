@@ -71,9 +71,11 @@ WORKDIR /app
 COPY --from=prod-deps --chown=node:node /app/node_modules /app/node_modules
 COPY --from=prod-deps --chown=node:node /app/services/api-gateway/node_modules /app/services/api-gateway/node_modules
 
-# código compilado
+
+# código compilado + LICENSE (AGPL-3.0 exige distribuição com a licença)
 COPY --from=build --chown=node:node /app/services/api-gateway/dist /app/services/api-gateway/dist
 COPY --from=build --chown=node:node /app/services/api-gateway/package.json /app/services/api-gateway/package.json
+COPY --chown=node:node services/api-gateway/LICENSE /app/services/api-gateway/LICENSE
 
 USER node
 WORKDIR /app/services/api-gateway
