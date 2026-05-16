@@ -1,0 +1,96 @@
+name: CodeQL
+
+# Análise estática de segurança do código (não das deps — pra isso, ver
+# Dependabot alerts). CodeQL roda queries oficiais do GitHub Security Lab
+# detectando classes comuns de bug: SQL/NoSQL injection, XSS, SSRF,
+# path traversal, prototype pollution, deserialização insegura, etc.
+#
+# Alertas vão pra https://github.com/diego64/hr-core/security/code-scanning.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - '**/README*'
+      - 'docs/**'
+      - 'CONTRIBUTING.md'
+      - 'SECURITY.md'
+      - 'CHANGELOG.md'
+      - 'LICENSE'
+      - '.gitmessage.txt'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - '**/README*'
+      - 'docs/**'
+      - 'CONTRIBUTING.md'
+      - 'SECURITY.md'
+      - 'CHANGELOG.md'
+      - 'LICENSE'
+      - '.gitmessage.txt'
+  schedule:
+    # Toda segunda às 06:00 UTC (03:00 BRT). Re-análise periódica garante
+    # que novas queries publicadas pelo Security Lab são aplicadas mesmo
+    # se o código não mudou.
+    - cron: '0 6 * * 1'
+  workflow_dispatch: {}
+
+# Cancela runs em duplicata para PRs (ex.: push novo invalida o anterior).
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # Necessário pro CodeQL conseguir publicar alertas na aba Security.
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # `javascript-typescript` cobre os 2 numa única análise (mais rápido
+        # que rodar separado desde a fusão das queries em 2024).
+        language: [javascript-typescript]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # `security-extended` adiciona queries de severidade média/alta
+          # além do default (apenas alta). Mais ruído potencial, mais
+          # cobertura — bom pra um projeto novo onde queremos descobrir
+          # tudo cedo.
+          queries: security-extended
+          # Path filters — CodeQL só analisa o código relevante.
+          config: |
+            paths:
+              - services
+              - packages
+            paths-ignore:
+              - '**/node_modules'
+              - '**/dist'
+              - '**/coverage'
+              - '**/*.test.ts'
+              - '**/*.spec.ts'
+              - '**/*.e2e.test.ts'
+
+      # CodeQL infere automaticamente o build pra TypeScript/JavaScript;
+      # não precisa de step de build manual.
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'
+          upload: always
