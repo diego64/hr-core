@@ -52,15 +52,19 @@ async function seed(): Promise<void> {
   const userRepo = new UserRepository(db)
 
   console.log('')
+  console.log('  Senhas omitidas da tabela abaixo (defesa contra logging de credenciais).')
+  console.log('  Valores literais estão no array SEED_USERS no topo deste arquivo.')
+  console.log('')
   console.log('  ┌──────────────────────────────────────────────────────────────────────────┐')
   console.log('  │ Email                          │ Senha       │ Role           │ Status   │')
   console.log('  ├──────────────────────────────────────────────────────────────────────────┤')
 
+  const MASKED = '*'.repeat(11)
   for (const seedUser of SEED_USERS) {
     const existing = await userRepo.findByEmail(seedUser.email)
     if (existing) {
       console.log(
-        `  │ ${seedUser.email.padEnd(30)} │ ${seedUser.password.padEnd(11)} │ ${seedUser.roles[0]!.padEnd(14)} │ skip     │`,
+        `  │ ${seedUser.email.padEnd(30)} │ ${MASKED} │ ${seedUser.roles[0]!.padEnd(14)} │ skip     │`,
       )
       continue
     }
@@ -72,7 +76,7 @@ async function seed(): Promise<void> {
       roles: seedUser.roles,
     })
     console.log(
-      `  │ ${seedUser.email.padEnd(30)} │ ${seedUser.password.padEnd(11)} │ ${seedUser.roles[0]!.padEnd(14)} │ created  │`,
+      `  │ ${seedUser.email.padEnd(30)} │ ${MASKED} │ ${seedUser.roles[0]!.padEnd(14)} │ created  │`,
     )
   }
 
