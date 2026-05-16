@@ -1,0 +1,68 @@
+# Application Argo CD para o auth-service no ambiente dev.
+# Apontamento: manifests/auth/overlays/dev (Kustomize).
+#
+# Sincronização automática:
+#   - Argo CD observa o branch `main` do repo
+#   - Qualquer commit que altere manifests/auth/** dispara sync
+#   - prune=true remove recursos que saírem do Git
+#   - selfHeal=true reverte alterações manuais no cluster
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: auth-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/part-of: hr-core
+    app.kubernetes.io/environment: dev
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: hr-core
+
+  source:
+    repoURL: https://github.com/diego64/hr-core.git
+    targetRevision: main
+    path: manifests/auth/overlays/dev
+    kustomize:
+      forceCommonAnnotations: false
+      forceCommonLabels: false
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: hr-core-dev
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Ignora diferenças de campos gerenciados por outros controllers ou que
+  # vivem fora do Git.
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    # Secret com a chave RSA é gerenciado fora do Git (Sealed/External Secrets).
+    - group: ''
+      kind: Secret
+      name: auth-keys
+      jsonPointers:
+        - /data
+        - /stringData
+
+  revisionHistoryLimit: 5

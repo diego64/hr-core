@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Plataforma HR Core — base compartilhada para microserviços (Node.js + TypeScript + pnpm)",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "engines": {
     "node": ">=22.11.0",

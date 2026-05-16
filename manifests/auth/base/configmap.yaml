@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/component: auth
+    app.kubernetes.io/part-of: hr-core
+data:
+  # Runtime
+  NODE_ENV: 'production'
+  HOST: '0.0.0.0'
+  PORT: '4000'
+  LOG_LEVEL: 'info'
+
+  # Mongo — Service DNS dentro do mesmo namespace (deployment do mongo é
+  # responsabilidade de outra peça do ecossistema)
+  MONGO_URL: 'mongodb://mongo.hr-core.svc.cluster.local:27017'
+  MONGO_DB_NAME: 'hr-auth'
+
+  # JWT — issuer/audience públicos (sem segredo aqui)
+  AUTH_JWT_ISSUER: 'https://auth.hr-core.local'
+  AUTH_JWT_AUDIENCE: 'hr-core'
+  AUTH_JWT_KID: 'auth-v1'
+  AUTH_PRIVATE_KEY_PATH: '/keys/private.pem'
+
+  # Lifespans
+  AUTH_ACCESS_TOKEN_TTL_SECONDS: '900'
+  AUTH_REFRESH_TOKEN_TTL_SECONDS: '604800'
+
+  # scrypt — valores padrão (~64MB de memória por hash)
+  AUTH_SCRYPT_LOG_N: '15'
+  AUTH_SCRYPT_R: '8'
+  AUTH_SCRYPT_P: '1'
+
+  # CORS — em produção, restringir ao(s) host(s) do frontend
+  CORS_ORIGINS: ''
+  CORS_CREDENTIALS: 'false'
+  CORS_MAX_AGE: '86400'
+
+  # OpenTelemetry
+  OTEL_ENABLED: 'true'
+  OTEL_SERVICE_NAME: 'auth'
+  OTEL_EXPORTER_OTLP_ENDPOINT: 'http://otel-collector.observability.svc.cluster.local:4318'

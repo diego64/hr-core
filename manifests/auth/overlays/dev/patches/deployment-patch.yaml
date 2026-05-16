@@ -1,0 +1,19 @@
+# Dev: 1 réplica, recursos baixos. scrypt log_n=12 (mais barato em CPU/memória
+# para não atrapalhar smoke tests; em prod fica 15).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: auth
+          resources:
+            requests:
+              cpu: '50m'
+              memory: '128Mi'
+            limits:
+              cpu: '300m'
+              memory: '256Mi'

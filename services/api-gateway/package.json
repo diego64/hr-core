@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "API Gateway — autenticação JWT, rate limiting, validação e roteamento HTTP para os microserviços do HR Core",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "main": "dist/server.js",
   "engines": {

@@ -1,0 +1,163 @@
+# Stack local do Auth Service.
+# Inclui:
+#   - auth-service  : build a partir do Dockerfile multi-stage, runtime de produção
+#   - mongo         : MongoDB 7 (porta 27017 exposta para testes locais)
+#   - tempo         : Grafana Tempo, recebe traces via OTLP HTTP (4318)
+#   - prometheus    : raspa /metrics do auth a cada 15s
+#   - grafana       : UI para métricas + traces (administrador / 1qaz2wsx12)
+#
+# Subir tudo:    docker compose --project-directory . -f docker-compose.yml up -d --build
+# Derrubar tudo: docker compose --project-directory . -f docker-compose.yml down -v
+
+name: hr-core-auth
+
+services:
+  auth-service:
+    build:
+      context: ../..
+      dockerfile: services/auth/Dockerfile
+    image: hr-core/auth:local
+    container_name: hr-core-auth
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: '4000'
+      LOG_LEVEL: info
+
+      MONGO_URL: mongodb://mongo:27017
+      MONGO_DB_NAME: hr-auth
+
+      AUTH_JWT_ISSUER: https://auth.hr-core.local
+      AUTH_JWT_AUDIENCE: hr-core
+      AUTH_JWT_KID: auth-v1
+      AUTH_PRIVATE_KEY_PATH: /keys/private.pem
+
+      AUTH_ACCESS_TOKEN_TTL_SECONDS: '900'
+      AUTH_REFRESH_TOKEN_TTL_SECONDS: '604800'
+
+      AUTH_SCRYPT_LOG_N: '15'
+      AUTH_SCRYPT_R: '8'
+      AUTH_SCRYPT_P: '1'
+
+      CORS_ORIGINS: 'http://localhost:3000,http://localhost:5173'
+      CORS_CREDENTIALS: 'true'
+      CORS_MAX_AGE: '86400'
+
+      OTEL_ENABLED: 'true'
+      OTEL_SERVICE_NAME: auth
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+    volumes:
+      - ./keys:/keys:ro
+    depends_on:
+      mongo:
+        condition: service_healthy
+      tempo:
+        condition: service_started
+    networks:
+      - hr-auth
+
+  mongo:
+    image: mongo:7
+    container_name: hr-core-auth-mongo
+    restart: unless-stopped
+    command: ['--bind_ip_all', '--quiet']
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand({ ping: 1 })']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - hr-auth
+
+  # Expoe métricas internas do MongoDB em /metrics — scraped pelo Prometheus.
+  # Sem autenticação (mongo aqui sem auth ligado).
+  mongo-exporter:
+    image: percona/mongodb_exporter:0.40
+    container_name: hr-core-auth-mongo-exporter
+    restart: unless-stopped
+    command:
+      - '--mongodb.uri=mongodb://mongo:27017'
+      - '--collect-all'
+      - '--compatible-mode'
+      - '--web.listen-address=:9216'
+    expose:
+      - '9216'
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - hr-auth
+
+  tempo:
+    image: grafana/tempo:2.10.5
+    container_name: hr-core-auth-tempo
+    restart: unless-stopped
+    command: ['-config.file=/etc/tempo.yaml']
+    volumes:
+      - ./docker/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - '3210:3200' # Tempo HTTP API (3210 host para não colidir com api-gateway)
+      - '4328:4318' # OTLP HTTP (4328 host para não colidir)
+    networks:
+      - hr-auth
+
+  prometheus:
+    image: prom/prometheus:v3.11.3
+    container_name: hr-core-auth-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=2h'
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - '9091:9090' # 9091 host para não colidir com api-gateway compose
+    networks:
+      - hr-auth
+    depends_on:
+      - auth-service
+
+  grafana:
+    image: grafana/grafana:13.0.1
+    container_name: hr-core-auth-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: administrador
+      GF_SECURITY_ADMIN_PASSWORD: 1qaz2wsx12
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+      GF_AUTH_DISABLE_LOGIN_FORM: 'false'
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor
+    volumes:
+      - ./docker/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./docker/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./docker/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - '3011:3000' # 3011 host para não colidir com api-gateway
+    networks:
+      - hr-auth
+    depends_on:
+      - prometheus
+      - tempo
+
+volumes:
+  mongo-data:
+  tempo-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  hr-auth:
+    driver: bridge

@@ -55,7 +55,7 @@ Enquanto o projeto está pré-1.0 (`0.x`), apenas a **versão mais recente** (`m
 
 ### Canal preferencial
 
-E-mail para **`security@hr-core.local`** (substituir pelo endereço real antes de publicar este repo).
+E-mail para **`diegoferreira1964@gmail.com`**.
 
 Inclua no e-mail:
 
