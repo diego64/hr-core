@@ -6,6 +6,34 @@ Responsável **exclusivamente** por autenticação JWT, autorização baseada em
 
 ---
 
+## Onde a API está rodando
+
+> **A API responde porque está rodando no container Docker.** Não no `pnpm dev`.
+
+Quando você `curl http://localhost:3000/health` e recebe `200 OK`, o pacote está chegando no container **`hr-core-api-gateway`** (porta do host `3000` mapeada via `docker-compose.yml`). O processo Node lá dentro está rodando o **JS compilado**:
+
+```
+node --import ./dist/tracing.js dist/server.js
+```
+
+Verificar a qualquer momento:
+
+```bash
+docker ps --filter "name=hr-core-api-gateway$" --format "{{.Names}}: {{.Status}}"
+# → hr-core-api-gateway: Up X minutes (healthy)
+
+docker exec hr-core-api-gateway ps aux | grep node
+# → 1 node ... node --import ./dist/tracing.js dist/server.js
+```
+
+### Implicações práticas
+
+1. **`pnpm dev` em paralelo vai falhar** com `EADDRINUSE: 0.0.0.0:3000` — o container já está ocupando a porta. Veja [Execução](#execução) para os 3 caminhos de contorno.
+2. **Alterar código fonte não tem efeito imediato** — você está vendo o `dist/` antigo do container. Pra refletir mudanças, ou rebuilde a imagem (`pnpm compose:up`) ou pare o container e use `pnpm dev`.
+3. **O `.env` na raiz do workspace não é lido pelo container** — variáveis vêm do bloco `environment:` do `docker-compose.yml`. Editar `.env` só afeta `pnpm dev` no host.
+
+---
+
 ## Sumário
 
 - [Visão geral](#visão-geral)
@@ -140,7 +168,7 @@ A chave pública é buscada uma única vez por `kid` e mantida em cache (TTL **1
 | `RATE_LIMIT_MAX`       | `100`   | Requisições permitidas na janela   |
 | `RATE_LIMIT_WINDOW_MS` | `60000` | Tamanho da janela em milissegundos |
 
-> ⚠️ O backend é **in-memory** por instância. Contador não é compartilhado entre pods. Para produção multi-instância, substituir pelo backend Redis.
+> **Atenção:** o backend é **in-memory** por instância. Contador não é compartilhado entre pods. Para produção multi-instância, substituir pelo backend Redis.
 
 ### CORS
 
@@ -150,7 +178,7 @@ A chave pública é buscada uma única vez por `kid` e mantida em cache (TTL **1
 | `CORS_CREDENTIALS` | `false` | Permite envio de cookies / `Authorization` em requests cross-origin  |
 | `CORS_MAX_AGE`     | `86400` | Cache do resultado do preflight no navegador, em segundos            |
 
-> ⚠️ `CORS_ORIGINS=*` **combinado com** `CORS_CREDENTIALS=true` é proibido pela spec do CORS — o navegador rejeita.
+> **Atenção:** `CORS_ORIGINS=*` **combinado com** `CORS_CREDENTIALS=true` é proibido pela spec do CORS — o navegador rejeita.
 
 ### Swagger / OpenAPI
 
@@ -159,7 +187,7 @@ A chave pública é buscada uma única vez por `kid` e mantida em cache (TTL **1
 | `SWAGGER_ENABLED`      | `true`  | Liga/desliga geração da spec OpenAPI e a Swagger UI. Em produção, desligar se a exposição for pública. |
 | `SWAGGER_ROUTE_PREFIX` | `/docs` | Prefixo onde a Swagger UI é montada. `${prefix}/json` serve a spec em JSON.                            |
 
-> ⚠️ Quando `SWAGGER_ENABLED=false`, nem `/docs` nem `/docs/json` são registrados — qualquer GET responde 404 RFC 7807.
+> **Atenção:** quando `SWAGGER_ENABLED=false`, nem `/docs` nem `/docs/json` são registrados — qualquer GET responde 404 RFC 7807.
 
 ### OpenTelemetry
 
@@ -170,13 +198,13 @@ A chave pública é buscada uma única vez por `kid` e mantida em cache (TTL **1
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | _(opcional)_  | URL base do Collector (sem `/v1/traces`). Ex.: `http://tempo:4318`        |
 | `OTEL_RESOURCE_ATTRIBUTES`    | _(opcional)_  | CSV de atributos extras. Ex.: `deployment.environment=prod,team=platform` |
 
-> ℹ️ O auto-instrumentation hooka `http`, `undici` (proxy) e `pino` (logs com `traceId`). Para spans específicos do Fastify, adicionar `@opentelemetry/instrumentation-fastify` no array de `instrumentations` em `src/tracing.ts`.
+> **Nota:** o auto-instrumentation hooka `http`, `undici` (proxy) e `pino` (logs com `traceId`). Para spans específicos do Fastify, adicionar `@opentelemetry/instrumentation-fastify` no array de `instrumentations` em `src/tracing.ts`.
 
 ### Microserviços downstream
 
 | Variável                      | Obrigatória | Prefixo HTTP exposto         |
 | ----------------------------- | :---------: | ---------------------------- |
-| `FUNCIONARIO_SERVICE_URL`     |     ✅      | `/api/v1/funcionarios`       |
+| `FUNCIONARIO_SERVICE_URL`     |     Sim     | `/api/v1/funcionarios`       |
 | `FERIAS_SERVICE_URL`          |      —      | `/api/v1/ferias`             |
 | `AVALIACAO_SERVICE_URL`       |      —      | `/api/v1/avaliacoes`         |
 | `FOLHA_PAGAMENTO_SERVICE_URL` |      —      | `/api/v1/folha-de-pagamento` |
@@ -187,12 +215,39 @@ Serviços não definidos não registram rota — o gateway responde 404 para o p
 
 ## Execução
 
+> Antes de tudo: **a API que está respondendo em `http://localhost:3000` é o container**, não o `pnpm dev`. Veja [Onde a API está rodando](#onde-a-api-está-rodando) para o contexto completo.
+
 Todos os comandos podem ser rodados:
 
 - **a partir do diretório do serviço** (`cd services/api-gateway`), ou
 - **a partir da raiz** com filtro (`pnpm --filter @hr-core/api-gateway <script>`).
 
-### Desenvolvimento
+### Modo 1 — Container (default, está rodando agora)
+
+```bash
+pnpm compose:up      # build + sobe a stack (gateway + mock + observabilidade)
+pnpm compose:logs    # logs em follow
+pnpm compose:down    # derruba + apaga volumes
+```
+
+Roda `node --import ./dist/tracing.js dist/server.js` dentro de `hr-core-api-gateway`. **Sem hot-reload** — cada mudança em `src/` exige `compose:up` novamente (rebuild ~30-60s).
+
+### Modo 2 — `pnpm dev` (hot-reload, exige porta livre)
+
+`tsx watch src/server.ts` no host. Reinicia a cada alteração e formata logs com `pino-pretty`.
+
+Antes de rodar a primeira vez:
+
+```bash
+# 1. .env é OBRIGATÓRIO — sem ele, env.ts faz fail-fast no boot
+cd services/api-gateway
+cp .env.example .env
+
+# 2. Liberar a porta 3000 (o container ainda está ocupando)
+docker stop hr-core-api-gateway
+```
+
+Depois:
 
 ```bash
 pnpm dev
@@ -200,9 +255,22 @@ pnpm dev
 
 - `tsx watch` reinicia o processo a cada alteração em `src/`
 - Logs formatados pelo `pino-pretty`
-- Tracing **desligado por padrão** (`OTEL_ENABLED=false`)
+- Tracing **desligado por padrão** (`OTEL_ENABLED=false` no `.env.example`)
 
-### Produção
+### Modo 3 — Híbrido (Recomendado para dev ativo)
+
+Mantém mock-backend + Tempo + Prometheus + Grafana no compose, mas roda o gateway localmente com hot-reload:
+
+```bash
+docker stop hr-core-api-gateway   # derruba só o gateway (mantém o resto)
+cd services/api-gateway
+cp .env.example .env              # se ainda não existe
+pnpm dev
+```
+
+Agora você tem hot-reload + observabilidade real funcionando (métricas no Prometheus de `localhost:9090`, dashboard no Grafana de `localhost:3001`).
+
+### Modo 4 — Produção (binário compilado)
 
 ```bash
 pnpm build      # tsc emite JS + d.ts em ./dist
@@ -372,7 +440,7 @@ Exporta uma única função `buildApp(): Promise<FastifyInstance>`. A separaçã
 
 #### Configuração do Fastify
 
-- **Logger Pino** com `base: { service: 'api-gateway' }` — todo log carrega o campo `service`, atendendo ao padrão de logs estruturados do CLAUDE.md.
+- **Logger Pino** com `base: { service: 'api-gateway' }` — todo log carrega o campo `service`, atendendo ao padrão de logs estruturados do projeto.
 - Em `NODE_ENV=development`, o transport `pino-pretty` formata para humano. Em qualquer outro ambiente, JSON puro destinado ao Loki.
 - **`genReqId`** — se o header `x-trace-id` chega na request (propagado por outro hop), reaproveita; senão gera `randomUUID()`. Isso torna `request.id` o **traceId** efetivo que aparece em todos os logs do Pino e é repassado adiante pelo proxy.
 - **`trustProxy: true`** — necessário para honrar `X-Forwarded-For` quando o gateway está atrás de LB/ingress (caso contrário o rate-limit por IP sempre vê o IP do proxy).
@@ -431,15 +499,15 @@ Para cada `DownstreamRoute`, registra uma instância de `@fastify/http-proxy` co
 
 Em runtime, se `authenticate` falha o preHandler aborta antes do `rewriteRequestHeaders`, então o `?? ''` é defesa em profundidade — `request.user` é tipado como opcional no plugin de auth.
 
-#### Conformidade com CLAUDE.md
+#### Conformidade com os padrões arquiteturais
 
-- ✅ Zero regra de negócio — só roteamento e propagação de identidade.
-- ✅ Suporta Zero Trust: gateway valida JWT, downstream pode re-validar localmente.
-- ✅ Trace propagado end-to-end via `x-trace-id`.
+- Zero regra de negócio — só roteamento e propagação de identidade.
+- Suporta Zero Trust: gateway valida JWT, downstream pode re-validar localmente.
+- Trace propagado end-to-end via `x-trace-id`.
 
 #### Gaps conhecidos
 
-- **Sem rota explícita para o Auth Service** — login e refresh token rotation citados no CLAUDE.md não têm prefixo dedicado aqui. Vale registrar se forem expostos via gateway.
+- **Sem rota explícita para o Auth Service** — login e refresh token rotation, embora previstos na arquitetura do projeto, não têm prefixo dedicado aqui. Vale registrar se forem expostos via gateway.
 - **Sem `timeout` por rota** — usa defaults do `@fastify/http-proxy`. Para produção vale ajustar (downstream lento não deve segurar o gateway indefinidamente).
 - **Sem `proxyPayloads: false`** — body é bufferizado por padrão, o que impede streaming em payloads grandes. Trocar para `false` se houver endpoints de upload no roadmap.
 
@@ -480,7 +548,7 @@ createRemoteJWKSet(new URL(env.AUTH_JWKS_URL), {
 })
 ```
 
-- Casa com o modelo RS256 do CLAUDE.md: gateway só tem chave pública, busca via JWKS endpoint do Auth Service.
+- Casa com o modelo RS256 do projeto: gateway só tem chave pública, busca via JWKS endpoint do Auth Service.
 - `cacheMaxAge: 10min` evita hit a cada request; `cooldownDuration: 30s` protege o Auth Service contra storm em caso de falha.
 - JWKS é instanciado **uma vez** no boot — sem overhead por request.
 - Rotação de chave no Auth Service é transparente: novos `kid` disparam refetch automático.
@@ -495,7 +563,7 @@ createRemoteJWKSet(new URL(env.AUTH_JWKS_URL), {
 
 #### Gaps conhecidos
 
-- **Não checa revogação** (evento `token.revoked` do CLAUDE.md). Tokens revogados continuam válidos até `exp`. Estratégias para futuro:
+- **Não checa revogação** (evento `token.revoked` previsto pelo projeto). Tokens revogados continuam válidos até `exp`. Estratégias para futuro:
   - Consumer Kafka `token.revoked` mantendo set em memória (LRU com TTL = `exp` do token).
   - Checagem síncrona contra Auth Service para endpoints sensíveis (com cache curto).
 - **O `cause` do erro JOSE é descartado no `throw`** — para forense, valeria `request.log.warn({ err: cause }, 'jwt verification failed')` antes de relançar.
@@ -653,14 +721,14 @@ traceExporter: new OTLPTraceExporter(exporterOptions),
 
 | Pacote                   | Liga? | Por quê                                                |
 | ------------------------ | :---: | ------------------------------------------------------ |
-| `instrumentation-fs`     |  ❌   | Ruidoso demais (cada read de arquivo vira span)        |
-| `instrumentation-pino`   |  ✅   | Injeta `trace_id` / `span_id` em todo log do Pino      |
-| `instrumentation-http`   |  ✅   | Spans para inbound HTTP (requests entrando no gateway) |
-| `instrumentation-undici` |  ✅   | Spans para outbound HTTP (proxy → downstreams)         |
+| `instrumentation-fs`     |  Não  | Ruidoso demais (cada read de arquivo vira span)        |
+| `instrumentation-pino`   |  Sim  | Injeta `trace_id` / `span_id` em todo log do Pino      |
+| `instrumentation-http`   |  Sim  | Spans para inbound HTTP (requests entrando no gateway) |
+| `instrumentation-undici` |  Sim  | Spans para outbound HTTP (proxy → downstreams)         |
 
 Pontos críticos:
 
-- **`pino` ligado** é o que conecta log ↔ trace no Loki/Grafana. Cada log do Fastify ganha `trace_id`/`span_id`; sem isso, correlação vira tarefa manual.
+- **`pino` ligado** é o que conecta log <-> trace no Loki/Grafana. Cada log do Fastify ganha `trace_id`/`span_id`; sem isso, correlação vira tarefa manual.
 - **`undici` ligado** é o que mantém o trace vivo no salto gateway → downstream. `@fastify/http-proxy` usa `undici` por baixo — sem essa instrumentação, downstreams aparecem como spans órfãos.
 
 #### Shutdown — flush garantido
@@ -687,7 +755,7 @@ Chamado pelo `server.ts:12` depois de `app.close()` no SIGTERM/SIGINT. `sdk.shut
 
 ### Proposta — Consumer Kafka `token.revoked`
 
-Estado atual: o gateway valida assinatura/expiração via JWKS, mas **um token revogado pelo Auth Service continua válido até `exp`** (15min, segundo CLAUDE.md). Para fechar o gap sem reintroduzir acoplamento síncrono entre gateway e Auth Service, segue uma proposta de implementação.
+Estado atual: o gateway valida assinatura/expiração via JWKS, mas **um token revogado pelo Auth Service continua válido até `exp`** (15min, conforme política do projeto). Para fechar o gap sem reintroduzir acoplamento síncrono entre gateway e Auth Service, segue uma proposta de implementação.
 
 #### Arquitetura
 
@@ -730,7 +798,7 @@ src/
 
 - **`tokenId`** = claim `jti` do JWT (Auth Service precisa emitir esse claim a partir de agora).
 - **`exp`** = unix timestamp; o store usa esse valor como TTL da entrada (passou de `exp`, pode descartar — token já é inválido por expiração natural).
-- **`reason: "refresh_reuse"`** dispara revogação em cascata no Auth Service (regra do CLAUDE.md), mas no gateway é só metadata para log.
+- **`reason: "refresh_reuse"`** dispara revogação em cascata no Auth Service (regra arquitetural do projeto), mas no gateway é só metadata para log.
 
 #### Esboço do `RevokedTokenStore`
 
@@ -785,7 +853,7 @@ if (typeof jti === 'string' && fastify.isRevoked(jti)) {
 // kafka/consumers/token-revoked.ts
 export async function startTokenRevokedConsumer(fastify: FastifyInstance) {
   const consumer = fastify.kafka.consumer({
-    groupId: 'api-gateway-token-revoked-group', // padrão CLAUDE.md
+    groupId: 'api-gateway-token-revoked-group', // padrão de nomenclatura do projeto
   })
   await consumer.subscribe({ topic: 'token.revoked', fromBeginning: false })
 
@@ -811,18 +879,18 @@ export async function startTokenRevokedConsumer(fastify: FastifyInstance) {
 
 ---
 
-### Resumo de conformidade com o CLAUDE.md
+### Resumo de conformidade com os padrões arquiteturais
 
-| Item                                              | `app.ts` | `proxy.ts` |  `auth.ts`  | `error-handler.ts` | `rate-limit.ts` | `tracing.ts` |
-| ------------------------------------------------- | :------: | :--------: | :---------: | :----------------: | :-------------: | :----------: |
-| Sem regra de negócio no gateway                   |    ✅    |     ✅     |     ✅      |         ✅         |       ✅        |      ✅      |
-| JWT RS256 com chave pública (JWKS)                |    —     |     —      |     ✅      |         —          |        —        |      —       |
-| Logs estruturados (`service`, `traceId`, `level`) |    ✅    |     —      |      —      |         ✅         |        —        |      ✅      |
-| RFC 7807 em respostas de erro                     |    —     |     —      |      —      |         ✅         |       ✅        |      —       |
-| Zero Trust (propaga identidade ao downstream)     |    —     |     ✅     |     ✅      |         —          |        —        |      —       |
-| Revogação de token (`token.revoked` Kafka)        |    —     |     —      | ⚠️ pendente |         —          |        —        |      —       |
-| Rate limit por IP                                 |    —     |     —      |      —      |         —          |       ✅        |      —       |
-| Tracing distribuído (Tempo via OTLP)              |    —     |     —      |      —      |         —          |        —        |      ✅      |
+| Item                                              | `app.ts` | `proxy.ts` | `auth.ts` | `error-handler.ts` | `rate-limit.ts` | `tracing.ts` |
+| ------------------------------------------------- | :------: | :--------: | :-------: | :----------------: | :-------------: | :----------: |
+| Sem regra de negócio no gateway                   |   Sim    |    Sim     |    Sim    |        Sim         |       Sim       |     Sim      |
+| JWT RS256 com chave pública (JWKS)                |    —     |     —      |    Sim    |         —          |        —        |      —       |
+| Logs estruturados (`service`, `traceId`, `level`) |   Sim    |     —      |     —     |        Sim         |        —        |     Sim      |
+| RFC 7807 em respostas de erro                     |    —     |     —      |     —     |        Sim         |       Sim       |      —       |
+| Zero Trust (propaga identidade ao downstream)     |    —     |    Sim     |    Sim    |         —          |        —        |      —       |
+| Revogação de token (`token.revoked` Kafka)        |    —     |     —      | pendente  |         —          |        —        |      —       |
+| Rate limit por IP                                 |    —     |     —      |     —     |         —          |       Sim       |      —       |
+| Tracing distribuído (Tempo via OTLP)              |    —     |     —      |     —     |         —          |        —        |     Sim      |
 
 ---
 
@@ -1094,7 +1162,7 @@ A stack do `docker-compose.yml` provisiona Grafana com **login obrigatório**, d
 | Usuário | `administrador`         |
 | Senha   | `1qaz2wsx12`            |
 
-> ⚠️ **Credencial local só** — definida em texto no `docker-compose.yml` para conveniência de desenvolvimento. Antes de qualquer exposição externa (staging, prod, demos), trocar `GF_SECURITY_ADMIN_USER` / `GF_SECURITY_ADMIN_PASSWORD` para valores fortes vindos de um secret manager (Vault, AWS Secrets Manager, etc.) ou via `.env` não versionado.
+> **Atenção — credencial local apenas:** definida em texto no `docker-compose.yml` para conveniência de desenvolvimento. Antes de qualquer exposição externa (staging, prod, demos), trocar `GF_SECURITY_ADMIN_USER` / `GF_SECURITY_ADMIN_PASSWORD` para valores fortes vindos de um secret manager (Vault, AWS Secrets Manager, etc.) ou via `.env` não versionado.
 
 ### Política de autenticação
 
@@ -1112,7 +1180,7 @@ Arquivo: `docker/grafana-datasources.yml`. Provisionados com **UID explícito** 
 
 | Nome         | UID          | URL                      | Default | Recursos extras                                                                        |
 | ------------ | ------------ | ------------------------ | :-----: | -------------------------------------------------------------------------------------- |
-| `Prometheus` | `prometheus` | `http://prometheus:9090` |   ✅    | `timeInterval: 15s`                                                                    |
+| `Prometheus` | `prometheus` | `http://prometheus:9090` |   Sim   | `timeInterval: 15s`                                                                    |
 | `Tempo`      | `tempo`      | `http://tempo:3200`      |    —    | `tracesToMetrics`, `serviceMap` e `nodeGraph` apontando para o datasource `prometheus` |
 
 ### Dashboard inicial — `HR Core — API Gateway`
