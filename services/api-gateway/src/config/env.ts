@@ -35,9 +35,10 @@ const envSchema = z.object({
   SWAGGER_ROUTE_PREFIX: z.string().min(1).default('/docs'),
 
   FUNCIONARIO_SERVICE_URL: z.url(),
-  FERIAS_SERVICE_URL: z.url().optional(),
-  AVALIACAO_SERVICE_URL: z.url().optional(),
-  FOLHA_PAGAMENTO_SERVICE_URL: z.url().optional(),
+  // Envs opcionais — string vazia é tratada como ausente (z.url() não aceita "").
+  FERIAS_SERVICE_URL: z.preprocess((v) => (v === '' ? undefined : v), z.url().optional()),
+  AVALIACAO_SERVICE_URL: z.preprocess((v) => (v === '' ? undefined : v), z.url().optional()),
+  FOLHA_PAGAMENTO_SERVICE_URL: z.preprocess((v) => (v === '' ? undefined : v), z.url().optional()),
 })
 
 export type Env = z.infer<typeof envSchema>
