@@ -6,26 +6,44 @@ Manifestos Kubernetes do HR Core, organizados por serviço, em **Kustomize**.
 
 ```
 manifests/
-└── api-gateway/
-    ├── base/                       # manifestos canônicos, sem env-specifics
+├── api-gateway/
+│   ├── base/                       # manifestos canônicos, sem env-specifics
+│   │   ├── kustomization.yaml
+│   │   ├── serviceaccount.yaml
+│   │   ├── configmap.yaml          # envs não-sensíveis
+│   │   ├── secret.example.yaml     # template — NÃO referenciado pelo kustomize
+│   │   ├── deployment.yaml         # pods, probes, recursos, security context
+│   │   ├── service.yaml            # ClusterIP :80 → pod :3000
+│   │   ├── ingress.yaml            # ingress-nginx, host placeholder
+│   │   ├── networkpolicy.yaml      # ingress só do ingress-nginx, egress controlado
+│   │   └── poddisruptionbudget.yaml
+│   └── overlays/
+│       └── dev/
+│           ├── kustomization.yaml
+│           ├── namespace.yaml      # hr-core-dev
+│           └── patches/
+│               ├── deployment-patch.yaml   # 1 réplica, recursos baixos
+│               ├── ingress-patch.yaml      # api-gateway.dev.hr-core.local
+│               └── configmap-patch.yaml    # LOG_LEVEL=debug, CORS aberto, etc.
+└── auth/
+    ├── base/
     │   ├── kustomization.yaml
     │   ├── serviceaccount.yaml
-    │   ├── configmap.yaml          # envs não-sensíveis
-    │   ├── secret.example.yaml     # template — NÃO referenciado pelo kustomize
-    │   ├── deployment.yaml         # pods, probes, recursos, security context
-    │   ├── service.yaml            # ClusterIP :80 → pod :3000
-    │   ├── ingress.yaml            # ingress-nginx, host placeholder
-    │   ├── networkpolicy.yaml      # ingress só do ingress-nginx, egress controlado
+    │   ├── configmap.yaml          # MongoDB URL, JWT issuer/audience, scrypt params
+    │   ├── secret.example.yaml     # template — chave RSA fica em Secret externo
+    │   ├── deployment.yaml         # 2 réplicas, monta /keys via Secret
+    │   ├── service.yaml            # ClusterIP :80 → pod :4000
+    │   ├── networkpolicy.yaml      # ingress de ingress-nginx + pods hr-core + prometheus
     │   └── poddisruptionbudget.yaml
     └── overlays/
         └── dev/
             ├── kustomization.yaml
-            ├── namespace.yaml      # hr-core-dev
             └── patches/
                 ├── deployment-patch.yaml   # 1 réplica, recursos baixos
-                ├── ingress-patch.yaml      # api-gateway.dev.hr-core.local
-                └── configmap-patch.yaml    # LOG_LEVEL=debug, CORS aberto, etc.
+                └── configmap-patch.yaml    # LOG_LEVEL=debug, CORS aberto, scrypt log_n=12
 ```
+
+> **Nota**: o auth NÃO declara `Ingress` no base — em dev acessa-se via port-forward; em prod, configurar um Ingress separado se quiser expor `/auth/login` direto, ou rotear via api-gateway.
 
 ## Comandos
 

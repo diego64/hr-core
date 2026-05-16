@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: hr-core-dev
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/environment: dev
+
+commonAnnotations:
+  hr-core.local/environment: dev
+
+resources:
+  - ../../base
+
+patches:
+  - path: patches/deployment-patch.yaml
+    target:
+      kind: Deployment
+      name: auth
+  - path: patches/configmap-patch.yaml
+    target:
+      kind: ConfigMap
+      name: auth
+
+images:
+  - name: ghcr.io/diego64/hr-core/auth
+    newTag: dev-latest

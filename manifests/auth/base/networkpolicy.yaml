@@ -1,0 +1,77 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/component: auth
+    app.kubernetes.io/part-of: hr-core
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: auth
+      app.kubernetes.io/component: auth
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # JWKS é público (lido pelo gateway e por qualquer outro serviço HR Core).
+    # /auth/login etc. também — quem chama é o frontend, via ingress-nginx.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 4000
+    # Outros serviços do HR Core podem chamar /jwks.json diretamente
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: hr-core
+      ports:
+        - protocol: TCP
+          port: 4000
+    # /metrics raspado pelo Prometheus
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 4000
+  egress:
+    # DNS interno
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # MongoDB no mesmo namespace
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: mongo
+      ports:
+        - protocol: TCP
+          port: 27017
+    # OTLP HTTP exporter (Tempo / OTel Collector)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - protocol: TCP
+          port: 4318
+        - protocol: TCP
+          port: 4317

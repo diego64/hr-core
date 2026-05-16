@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: hr-core-auth-local
+
+scrape_configs:
+  - job_name: auth
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['auth-service:4000']
+        labels:
+          service: auth
+          env: local
+
+  - job_name: mongo
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['mongo-exporter:9216']
+        labels:
+          service: mongo
+          db: hr-auth
+          env: local

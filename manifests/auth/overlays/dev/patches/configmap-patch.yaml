@@ -1,0 +1,18 @@
+# Overrides de env específicos de dev:
+# - LOG_LEVEL=debug
+# - CORS aberto para o frontend local + gateway dev
+# - MongoDB no namespace hr-core-dev
+# - scrypt log_n=12 (~4MB de memória, ~10ms — apenas em dev)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth
+data:
+  LOG_LEVEL: 'debug'
+
+  MONGO_URL: 'mongodb://mongo.hr-core-dev.svc.cluster.local:27017'
+
+  CORS_ORIGINS: 'http://localhost:5173,http://localhost:3000,http://api-gateway.dev.hr-core.local'
+  CORS_CREDENTIALS: 'true'
+
+  AUTH_SCRYPT_LOG_N: '12'

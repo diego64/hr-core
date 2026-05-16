@@ -8,5 +8,6 @@ coverage/
 .DS_Store
 .claude
 CLAUDE.md
+ARCHITECTURE.md
 # Prisma clients gerados — saída dedicada por service (ver prisma/schema.prisma).
 services/*/src/generated/

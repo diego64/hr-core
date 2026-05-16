@@ -13,7 +13,8 @@ argocd/
 │   └── hr-core.yaml              # AppProject — restringe sources/destinations/recursos
 └── applications/
     ├── root.yaml                 # App-of-Apps — sincroniza tudo em applications/
-    └── api-gateway-dev.yaml      # Application do api-gateway no overlay dev
+    ├── api-gateway-dev.yaml      # Application do api-gateway no overlay dev
+    └── auth-dev.yaml             # Application do auth-service no overlay dev
 ```
 
 ## Padrão App-of-Apps
@@ -33,9 +34,9 @@ sincroniza sozinho, sem `kubectl apply` extra.
             ┌────────────────────────┼────────────────────────┐
             ▼                        ▼                        ▼
    Application:                Application:            Application:
-   api-gateway-dev             auth-dev                ferias-dev
-   (manifests/api-             (manifests/auth/        ...
-    gateway/overlays/dev)       overlays/dev)
+   api-gateway-dev             auth-dev                ferias-dev (futuro)
+   (manifests/api-             (manifests/auth/        (manifests/ferias/
+    gateway/overlays/dev)       overlays/dev)           overlays/dev)
 ```
 
 ## Bootstrap inicial (passos manuais — uma vez por cluster)
@@ -164,8 +165,10 @@ git push
 
 ## Próximos passos (roadmap)
 
-- [ ] Overlay de `production` (`overlays/prod/`) + `argocd/applications/api-gateway-prod.yaml`
-- [ ] Aplicações para os outros microsserviços (`auth`, `funcionario`, `ferias`, ...)
+- [x] Application para o `auth-service` (`auth-dev.yaml`)
+- [ ] Overlay de `production` (`overlays/prod/`) + `argocd/applications/{api-gateway,auth}-prod.yaml`
+- [ ] Aplicações para os outros microsserviços (`funcionario`, `ferias`, `avaliacao`, `folha-de-pagamento`, `notification`, `reports`, `dashboard`)
+- [ ] Application para o MongoDB compartilhado em `hr-core-dev` (ou Mongo separado por serviço — escolher antes de prod)
 - [ ] Argo CD Image Updater para tag automático em dev/prod
 - [ ] Sync windows na AppProject (bloquear deploy em prod fora do horário comercial)
 - [ ] SealedSecrets controller no cluster + secrets sealed commitados em `manifests/<servico>/overlays/*/secrets/`
