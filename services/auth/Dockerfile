@@ -13,7 +13,7 @@
 # -----------------------------------------------------------------------------
 # 1) Base
 # -----------------------------------------------------------------------------
-FROM node:22.22.2-alpine AS base
+FROM node:22.22.3-alpine AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable && corepack prepare pnpm@11.0.9 --activate
@@ -58,7 +58,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 # -----------------------------------------------------------------------------
 # 5) Runtime
 # -----------------------------------------------------------------------------
-FROM node:22.22.2-alpine AS runtime
+FROM node:22.22.3-alpine AS runtime
 ENV NODE_ENV=production
 ENV PORT=4000
 ENV HOST=0.0.0.0
