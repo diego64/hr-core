@@ -1,0 +1,238 @@
+# Stack local do Funcionario Service.
+# Inclui:
+#   - funcionario-service : build a partir do Dockerfile multi-stage, runtime de produção
+#   - mongo               : MongoDB 7 (porta host 27018 — não colide com auth/27017)
+#   - tempo               : Grafana Tempo, recebe traces via OTLP HTTP
+#   - prometheus          : raspa /metrics do funcionario a cada 15s
+#   - grafana             : UI para métricas + traces (administrador / 1qaz2wsx12)
+#
+# Portas host isoladas (não colidem com api-gateway nem auth):
+#   funcionario  : 3002   →  3002 do container  (3001 já é usada pelo grafana do api-gateway)
+#   mongo        : 27018  →  27017 do container
+#   minio API    : 9100   →  9000
+#   minio console: 9101   →  9001
+#   tempo HTTP   : 3211   →  3200
+#   tempo OTLP   : 4329   →  4318
+#   prometheus   : 9092   →  9090
+#   grafana      : 3012   →  3000
+#
+# IMPORTANTE: o JWKS do auth precisa estar acessível.
+#   Por padrão aponta para http://host.docker.internal:4000/.well-known/jwks.json
+#   (assumindo que o stack do auth está rodando no host). Ajuste AUTH_JWKS_URL
+#   pelo .env se necessário.
+#
+# Subir tudo:    docker compose --project-directory . -f docker-compose.yml up -d --build
+# Derrubar tudo: docker compose --project-directory . -f docker-compose.yml down -v
+
+name: hr-core-funcionario
+
+services:
+  funcionario-service:
+    build:
+      context: ../..
+      dockerfile: services/funcionario/Dockerfile
+    image: hr-core/funcionario:local
+    container_name: hr-core-funcionario
+    restart: unless-stopped
+    ports:
+      - '3002:3002'
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: '3002'
+      LOG_LEVEL: info
+
+      MONGO_URL: mongodb://mongo:27017
+      MONGO_DB_NAME: hr-funcionarios
+
+      # JWKS remoto do Auth Service. Ajuste pelo .env se o auth não estiver
+      # rodando no host. Em ambiente totalmente local, host.docker.internal
+      # resolve para o host Docker (precisa de extra_hosts no Linux).
+      AUTH_JWKS_URL: ${AUTH_JWKS_URL:-http://host.docker.internal:4000/.well-known/jwks.json}
+      AUTH_JWT_ISSUER: https://auth.hr-core.local
+      AUTH_JWT_AUDIENCE: hr-core
+
+      # Object storage (MinIO no compose, S3 em prod).
+      # S3_ENDPOINT é o endereço interno (rede do compose).
+      # S3_PUBLIC_ENDPOINT é o que vai dentro da URL presigned — precisa ser
+      # alcançável pelo cliente HTTP final (host machine ou browser).
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: http://localhost:9100
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_BUCKET: hr-funcionario-documentos
+      S3_FORCE_PATH_STYLE: 'true'
+      S3_PRESIGN_EXPIRES_SECONDS: '900'
+
+      SWAGGER_ENABLED: 'true'
+      SWAGGER_ROUTE_PREFIX: /docs
+
+      CORS_ORIGINS: 'http://localhost:3000,http://localhost:5173'
+      CORS_CREDENTIALS: 'true'
+      CORS_MAX_AGE: '86400'
+
+      OTEL_ENABLED: 'true'
+      OTEL_SERVICE_NAME: funcionario
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+    extra_hosts:
+      # Permite que o container resolva o host Docker (auth rodando local).
+      - 'host.docker.internal:host-gateway'
+    depends_on:
+      mongo:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      tempo:
+        condition: service_started
+    networks:
+      - hr-funcionario
+
+  mongo:
+    image: mongo:7
+    container_name: hr-core-funcionario-mongo
+    restart: unless-stopped
+    command: ['--bind_ip_all', '--quiet']
+    ports:
+      - '27018:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand({ ping: 1 })']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - hr-funcionario
+
+  # Expoe métricas internas do MongoDB em /metrics — scraped pelo Prometheus.
+  # Sem autenticação (mongo aqui sem auth ligado).
+  mongo-exporter:
+    image: percona/mongodb_exporter:0.40
+    container_name: hr-core-funcionario-mongo-exporter
+    restart: unless-stopped
+    command:
+      - '--mongodb.uri=mongodb://mongo:27017'
+      - '--collect-all'
+      - '--compatible-mode'
+      - '--web.listen-address=:9216'
+    expose:
+      - '9216'
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - hr-funcionario
+
+  # Object storage local — substitui S3 em dev. Bucket criado pelo minio-init.
+  # Console web em http://localhost:9101 (login: minioadmin / minioadmin).
+  minio:
+    image: minio/minio:RELEASE.2025-04-08T15-41-24Z
+    container_name: hr-core-funcionario-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - '9100:9000' # API S3-compatível
+      - '9101:9001' # console web
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - hr-funcionario
+
+  # One-shot — usa o `mc` da imagem oficial do MinIO Client para criar o
+  # bucket de documentos. Idempotente: `mb --ignore-existing` não falha
+  # se já existir. Sai com 0 e o service-funcionario só inicia depois.
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-08T15-39-49Z
+    container_name: hr-core-funcionario-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc mb --ignore-existing local/hr-funcionario-documentos &&
+      echo 'bucket pronto' &&
+      exit 0
+      "
+    networks:
+      - hr-funcionario
+
+  tempo:
+    image: grafana/tempo:2.10.5
+    container_name: hr-core-funcionario-tempo
+    restart: unless-stopped
+    command: ['-config.file=/etc/tempo.yaml']
+    volumes:
+      - ./docker/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - '3211:3200' # Tempo HTTP API
+      - '4329:4318' # OTLP HTTP
+    networks:
+      - hr-funcionario
+
+  prometheus:
+    image: prom/prometheus:v3.11.3
+    container_name: hr-core-funcionario-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=2h'
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - '9092:9090'
+    networks:
+      - hr-funcionario
+    depends_on:
+      - funcionario-service
+
+  grafana:
+    image: grafana/grafana:13.0.1
+    container_name: hr-core-funcionario-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: administrador
+      GF_SECURITY_ADMIN_PASSWORD: 1qaz2wsx12
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+      GF_AUTH_DISABLE_LOGIN_FORM: 'false'
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor
+    volumes:
+      - ./docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./docker/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - '3012:3000'
+    networks:
+      - hr-funcionario
+    depends_on:
+      - prometheus
+      - tempo
+
+volumes:
+  mongo-data:
+  minio-data:
+  tempo-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  hr-funcionario:
+    driver: bridge

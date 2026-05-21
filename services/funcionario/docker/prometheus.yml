@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: hr-core-funcionario-local
+
+scrape_configs:
+  - job_name: funcionario
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['funcionario-service:3002']
+        labels:
+          service: funcionario
+          env: local
+
+  - job_name: mongo
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['mongo-exporter:9216']
+        labels:
+          service: mongo
+          db: hr-funcionarios
+          env: local
