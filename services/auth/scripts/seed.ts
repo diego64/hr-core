@@ -1,8 +1,12 @@
 /**
  * Seed idempotente para popular o Auth Service com 3 perfis de teste:
- *   - admin@hr-core.local / admin12345 → role ADMINISTRADOR
- *   - coord@hr-core.local / coord12345 → role COORDENADOR
- *   - user@hr-core.local  / user12345  → role USUARIO
+ *   - ana.lima@hr-core.local    / ana12345    → role ADMINISTRADOR
+ *   - bruno.costa@hr-core.local / bruno12345  → role COORDENADOR
+ *   - carla.dias@hr-core.local  / carla12345  → role USUARIO
+ *
+ * Os mesmos 3 emails aparecem no seed do Funcionario Service, ligando o JWT
+ * de cada usuário a um registro real de funcionario (Ana=Tecnologia,
+ * Bruno=RH, Carla=Financeiro). Útil para exercitar o RBAC end-to-end.
  *
  * Idempotente: roda quantas vezes quiser sem duplicar (usa email único como
  * chave). Se o usuário já existe, pula. Útil em ambientes de dev/CI onde
@@ -27,22 +31,22 @@ interface SeedUser {
 
 const SEED_USERS: readonly SeedUser[] = [
   {
-    email: 'admin@hr-core.local',
-    password: 'admin12345',
+    email: 'ana.lima@hr-core.local',
+    password: 'ana12345',
     roles: ['ADMINISTRADOR'],
-    label: 'Administrador (CRUD de usuários, operações elevadas)',
+    label: 'Ana Lima — Administradora (CRUD de usuários, operações elevadas)',
   },
   {
-    email: 'coord@hr-core.local',
-    password: 'coord12345',
+    email: 'bruno.costa@hr-core.local',
+    password: 'bruno12345',
     roles: ['COORDENADOR'],
-    label: 'Coordenador (aprovações de fluxo, relatórios da equipe)',
+    label: 'Bruno Costa — Coordenador (aprovações de fluxo, relatórios da equipe)',
   },
   {
-    email: 'user@hr-core.local',
-    password: 'user12345',
+    email: 'carla.dias@hr-core.local',
+    password: 'carla12345',
     roles: ['USUARIO'],
-    label: 'Usuário comum (operações do dia-a-dia)',
+    label: 'Carla Dias — Usuária comum (operações do dia-a-dia)',
   },
 ]
 
@@ -86,7 +90,7 @@ async function seed(): Promise<void> {
   console.log('')
   console.log('  curl -s -X POST http://localhost:4000/auth/login \\')
   console.log("    -H 'Content-Type: application/json' \\")
-  console.log('    -d \'{"email":"admin@hr-core.local","password":"admin12345"}\'')
+  console.log('    -d \'{"email":"ana.lima@hr-core.local","password":"ana12345"}\'')
   console.log('')
 
   await closeMongo()

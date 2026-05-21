@@ -295,11 +295,13 @@ pnpm --filter @hr-core/auth seed
 
 Idempotente — roda quantas vezes quiser. Cria (se não existirem):
 
-| Email                 | Senha        | Role            | Para que serve                            |
-| --------------------- | ------------ | --------------- | ----------------------------------------- |
-| `admin@hr-core.local` | `admin12345` | `ADMINISTRADOR` | CRUD de usuários e operações elevadas     |
-| `coord@hr-core.local` | `coord12345` | `COORDENADOR`   | Aprovações de fluxo, relatórios da equipe |
-| `user@hr-core.local`  | `user12345`  | `USUARIO`       | Operações de domínio do dia-a-dia         |
+| Email                       | Senha        | Role            | Para que serve                            |
+| --------------------------- | ------------ | --------------- | ----------------------------------------- |
+| `ana.lima@hr-core.local`    | `ana12345`   | `ADMINISTRADOR` | CRUD de usuários e operações elevadas     |
+| `bruno.costa@hr-core.local` | `bruno12345` | `COORDENADOR`   | Aprovações de fluxo, relatórios da equipe |
+| `carla.dias@hr-core.local`  | `carla12345` | `USUARIO`       | Operações de domínio do dia-a-dia         |
+
+Os mesmos 3 emails aparecem no seed do **Funcionario Service** — ligando o JWT de cada usuário a um registro real de funcionario (Ana=Tecnologia, Bruno=RH, Carla=Financeiro).
 
 > **Atenção:** senhas fracas, propósito **exclusivamente** de teste local. Não usar em staging/prod.
 
@@ -383,7 +385,7 @@ services/auth/
 {
   "user": {
     "id": "6a0623ed5396dcdcccec5244",
-    "email": "admin@hr-core.local",
+    "email": "ana.lima@hr-core.local",
     "roles": ["ADMINISTRADOR"],
     "active": true,
     "createdAt": "2026-05-14T19:35:09.839Z"
@@ -656,7 +658,13 @@ Sobe 5 containers:
 | `hr-core-auth-prometheus` | `9091`         | Raspa `/metrics` a cada 15s                                 |
 | `hr-core-auth-grafana`    | `3011`         | UI métricas + traces — login `administrador` / `1qaz2wsx12` |
 
-Portas escolhidas para **não colidir** com o compose do api-gateway (que usa 3000, 3001, 3200, 4318, 9090).
+Portas escolhidas para **não colidir** com nenhum outro stack do monorepo:
+
+| Stack         | Portas host ocupadas                                                                          |
+| ------------- | --------------------------------------------------------------------------------------------- |
+| `api-gateway` | `3000` (api), `3001` (grafana), `3200` (tempo), `4318` (otlp), `9090` (prom)                  |
+| `auth`        | `4000` (api), `3011` (grafana), `3210` (tempo), `4328` (otlp), `9091` (prom), `27017` (mongo) |
+| `funcionario` | `3002` (api), `3012` (grafana), `3211` (tempo), `4329` (otlp), `9092` (prom), `27018` (mongo) |
 
 ### Validação rápida
 
@@ -672,7 +680,7 @@ curl http://localhost:4000/.well-known/jwks.json | jq '.keys[0].kid'
 # Login admin (do seed)
 curl -X POST http://localhost:4000/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@hr-core.local","password":"admin12345"}' | jq '.user.roles'
+  -d '{"email":"ana.lima@hr-core.local","password":"ana12345"}' | jq '.user.roles'
 # → ["ADMINISTRADOR"]
 ```
 

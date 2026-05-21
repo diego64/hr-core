@@ -4,14 +4,17 @@
  *   - Seed inicial
  *   - Middleware RBAC (futuro)
  *
- * Convenção (do mais alto privilégio para o mais baixo):
- *   - ADMINISTRADOR: executa CRUD em usuários e operações elevadas; pode
- *     desativar contas, alterar roles, ver auditoria.
- *   - COORDENADOR: permissões intermediárias — aprovações de fluxos
- *     (férias, ponto, avaliações), leitura ampliada de relatórios da equipe.
- *     Não tem CRUD de usuários.
- *   - USUARIO: operações de domínio do dia-a-dia (solicitar férias,
- *     consultar próprios dados, etc.). Permissões mínimas.
+ * Convenção (responsabilidades por role — cada uma em um escopo distinto,
+ * sem hierarquia de "tudo o que o de cima faz"):
+ *
+ *   - ADMINISTRADOR: **exclusivamente** CRUD de usuários no Auth Service
+ *     (criar, desativar, alterar role, auditar). **Não** tem acesso a
+ *     funcionalidades de domínio (funcionário, férias, avaliação, folha).
+ *   - COORDENADOR: aprovações de fluxo (férias, documentos, alterações
+ *     cadastrais) e leitura de relatórios da equipe. Consulta funcionários
+ *     mas não cadastra.
+ *   - USUARIO: operações de domínio do dia-a-dia — cadastra funcionários,
+ *     solicita férias, sobe documentos. É o perfil operacional do RH.
  *
  * O fluxo de autenticação (POST /auth/login) é idêntico para os 3 roles;
  * o que muda é a autorização nos microsserviços downstream.

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8d7a3c12-4b2e-4f1a-9c5e-1a2b3c4d5e6f",
     "name": "HR Core",
-    "description": "Collection completa do HR Core — Auth Service + API Gateway + microsserviços downstream.\n\n## Como usar\n\n1. Importe este arquivo no Postman.\n2. Suba a stack: `pnpm --filter @hr-core/auth compose:up` (auth + mongo + obs) e `pnpm --filter @hr-core/api-gateway compose:up` (gateway + obs).\n3. Rode `pnpm --filter @hr-core/auth seed` para criar os usuários iniciais.\n4. Execute `Auth Service / POST /auth/login (admin)` — o test script salva `access_token` e `refresh_token` automaticamente em variáveis da collection.\n5. As demais requests autenticadas usam `{{access_token}}` no header `Authorization: Bearer ...`.\n\n## Credenciais seed\n\n| Email                   | Senha       | Role           |\n|-------------------------|-------------|----------------|\n| `admin@hr-core.local`   | `admin12345` | `ADMINISTRADOR` |\n| `coord@hr-core.local`   | `coord12345` | `COORDENADOR`   |\n| `user@hr-core.local`    | `user12345`  | `USUARIO`       |\n\n## Convenções\n\n- Datas em ISO 8601 (`YYYY-MM-DDTHH:mm:ssZ`)\n- Erros seguem RFC 7807 (`application/problem+json`) com `traceId`\n- `X-Trace-Id` é injetado em toda request por pre-request script global\n\n## Folders\n\n- **Auth Service (direto :4000)** — endpoints do auth-service sem passar pelo gateway\n- **API Gateway (:3000)** — endpoints públicos do gateway + proxy para microsserviços\n- **Errors (RFC 7807)** — cenários de erro para validar o contrato\n",
+    "description": "Collection completa do HR Core — Auth Service + API Gateway + Funcionario Service + microsserviços downstream.\n\n## Como usar\n\n1. Importe este arquivo no Postman.\n2. Suba as stacks: `pnpm --filter @hr-core/auth compose:up` (auth + mongo + obs), `pnpm --filter @hr-core/funcionario compose:up` (funcionario + mongo + obs) e (opcional) `pnpm --filter @hr-core/api-gateway compose:up` (gateway + obs).\n3. Rode os seeds:\n   - `pnpm --filter @hr-core/auth seed` — cria 3 usuários (ADMINISTRADOR, COORDENADOR, USUARIO)\n   - `pnpm --filter @hr-core/funcionario seed` — cria 3 funcionários (Ana, Bruno, Carla) usando os mesmos emails do auth\n4. Execute `Auth Service / POST /auth/login (admin seed)` — o test script salva `access_token` e `refresh_token` automaticamente em variáveis da collection.\n5. As demais requests autenticadas usam `{{access_token}}` no header `Authorization: Bearer ...`.\n\n## Credenciais seed — Auth + Funcionario (mesmos emails)\n\n| Nome         | Email                       | Senha        | Role            | Departamento      | Cargo          |\n|--------------|-----------------------------|--------------|-----------------|-------------------|----------------|\n| Ana Lima     | `ana.lima@hr-core.local`    | `ana12345`   | `ADMINISTRADOR` | Tecnologia        | Desenvolvedora |\n| Bruno Costa  | `bruno.costa@hr-core.local` | `bruno12345` | `COORDENADOR`   | Recursos Humanos  | Coordenador    |\n| Carla Dias   | `carla.dias@hr-core.local`  | `carla12345` | `USUARIO`       | Financeiro        | Analista       |\n\n## Convenções\n\n- Datas em ISO 8601 (`YYYY-MM-DDTHH:mm:ssZ`)\n- Erros seguem RFC 7807 (`application/problem+json`) com `traceId`\n- `X-Trace-Id` é injetado em toda request por pre-request script global\n\n## Folders\n\n- **Auth Service (direto :4000)** — endpoints do auth-service sem passar pelo gateway\n- **API Gateway (:3000)** — endpoints públicos do gateway + proxy para microsserviços\n- **Funcionario Service (direto :3002)** — CRUD direto, sem passar pelo gateway\n- **Errors (RFC 7807)** — cenários de erro para validar o contrato\n",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -60,33 +60,42 @@
       "description": "URL direta do Auth Service"
     },
     {
+      "key": "funcionario_url",
+      "value": "http://localhost:3002",
+      "type": "string",
+      "description": "URL direta do Funcionario Service"
+    },
+    {
       "key": "admin_email",
-      "value": "admin@hr-core.local",
-      "type": "string"
+      "value": "ana.lima@hr-core.local",
+      "type": "string",
+      "description": "Ana Lima — role ADMINISTRADOR (seed)"
     },
     {
       "key": "admin_password",
-      "value": "admin12345",
+      "value": "ana12345",
       "type": "string"
     },
     {
       "key": "coord_email",
-      "value": "coord@hr-core.local",
-      "type": "string"
+      "value": "bruno.costa@hr-core.local",
+      "type": "string",
+      "description": "Bruno Costa — role COORDENADOR (seed)"
     },
     {
       "key": "coord_password",
-      "value": "coord12345",
+      "value": "bruno12345",
       "type": "string"
     },
     {
       "key": "user_email",
-      "value": "user@hr-core.local",
-      "type": "string"
+      "value": "carla.dias@hr-core.local",
+      "type": "string",
+      "description": "Carla Dias — role USUARIO (seed)"
     },
     {
       "key": "user_password",
-      "value": "user12345",
+      "value": "carla12345",
       "type": "string"
     },
     {
@@ -107,6 +116,12 @@
       "type": "string"
     },
     {
+      "key": "funcionario_id_atual",
+      "value": "",
+      "type": "string",
+      "description": "ObjectId do último funcionario criado via POST /funcionarios (preenchido automaticamente pelo test script)"
+    },
+    {
       "key": "ferias_id",
       "value": "550e8400-e29b-41d4-a716-446655440010",
       "type": "string"
@@ -114,6 +129,26 @@
     {
       "key": "avaliacao_id",
       "value": "550e8400-e29b-41d4-a716-446655440020",
+      "type": "string"
+    },
+    {
+      "key": "documento_id_atual",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "aprovacao_id_atual",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "login_email",
+      "value": "carla.dias@hr-core.local",
+      "type": "string"
+    },
+    {
+      "key": "login_password",
+      "value": "carla12345",
       "type": "string"
     }
   ],
@@ -125,16 +160,24 @@
         {
           "name": "GET /health",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{auth_url}}/health", "host": ["{{auth_url}}"], "path": ["health"] }
+            "url": {
+              "raw": "{{auth_url}}/health",
+              "host": ["{{auth_url}}"],
+              "path": ["health"]
+            }
           }
         },
         {
           "name": "GET /.well-known/jwks.json",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -167,9 +210,16 @@
             }
           ],
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"novo-usuario@hr-core.local\",\n  \"password\": \"senha-forte-aqui-123\"\n}"
@@ -183,17 +233,18 @@
           }
         },
         {
-          "name": "POST /auth/login (admin seed)",
+          "name": "POST /auth/login",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('login admin retorna 200 + tokens', function () {",
+                  "pm.test('200 retorna tokens — captura accessToken/refreshToken', function () {",
                   "  pm.expect(pm.response.code).to.equal(200);",
                   "  const body = pm.response.json();",
-                  "  pm.expect(body.user.roles).to.include('ADMINISTRADOR');",
+                  "  pm.expect(body.accessToken).to.be.a('string').and.not.empty;",
+                  "  pm.expect(body.refreshToken).to.be.a('string').and.not.empty;",
                   "  pm.collectionVariables.set('access_token', body.accessToken);",
                   "  pm.collectionVariables.set('refresh_token', body.refreshToken);",
                   "});"
@@ -202,88 +253,23 @@
             }
           ],
           "request": {
-            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
-            },
-            "url": {
-              "raw": "{{auth_url}}/auth/login",
-              "host": ["{{auth_url}}"],
-              "path": ["auth", "login"]
-            },
-            "description": "Autentica como ADMINISTRADOR (do seed). Salva `access_token` e `refresh_token` em variáveis da collection."
-          }
-        },
-        {
-          "name": "POST /auth/login (coord seed)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('login coord retorna 200 + tokens', function () {",
-                  "  pm.expect(pm.response.code).to.equal(200);",
-                  "  const body = pm.response.json();",
-                  "  pm.expect(body.user.roles).to.include('COORDENADOR');",
-                  "  pm.collectionVariables.set('access_token', body.accessToken);",
-                  "  pm.collectionVariables.set('refresh_token', body.refreshToken);",
-                  "});"
-                ]
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
-            }
-          ],
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{coord_email}}\",\n  \"password\": \"{{coord_password}}\"\n}"
+              "raw": "{\n  \"email\": \"{{login_email}}\",\n  \"password\": \"{{login_password}}\"\n}"
             },
             "url": {
               "raw": "{{auth_url}}/auth/login",
               "host": ["{{auth_url}}"],
               "path": ["auth", "login"]
             },
-            "description": "Autentica como COORDENADOR (do seed). Permissões intermediárias entre ADMINISTRADOR e USUARIO. Salva `access_token` e `refresh_token` em variáveis da collection."
-          }
-        },
-        {
-          "name": "POST /auth/login (user seed)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('login user retorna 200 + tokens', function () {",
-                  "  pm.expect(pm.response.code).to.equal(200);",
-                  "  const body = pm.response.json();",
-                  "  pm.expect(body.user.roles).to.include('USUARIO');",
-                  "  pm.collectionVariables.set('access_token', body.accessToken);",
-                  "  pm.collectionVariables.set('refresh_token', body.refreshToken);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
-            },
-            "url": {
-              "raw": "{{auth_url}}/auth/login",
-              "host": ["{{auth_url}}"],
-              "path": ["auth", "login"]
-            }
+            "description": "Login no Auth Service. Retorna accessToken (15min) + refreshToken (7d) — capturados automaticamente nas variáveis access_token e refresh_token.\n\nCredenciais do seed (troque login_email / login_password nas variables):\n  - ADMINISTRADOR : ana.lima@hr-core.local   / ana12345    (cuida do Auth)\n  - COORDENADOR   : bruno.costa@hr-core.local / bruno12345 (aprova docs/cadastros)\n  - USUARIO       : carla.dias@hr-core.local  / carla12345 (CRUD funcionário, uploads)\n\nDefault: USUARIO (carla.dias) — perfil com maior cobertura de endpoints no funcionario service."
           }
         },
         {
@@ -307,9 +293,16 @@
             }
           ],
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
@@ -325,9 +318,16 @@
         {
           "name": "POST /auth/logout",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
@@ -349,7 +349,9 @@
         {
           "name": "GET /health",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -362,7 +364,9 @@
         {
           "name": "GET /ready",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -375,7 +379,9 @@
         {
           "name": "GET /metrics",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -388,7 +394,9 @@
         {
           "name": "GET /docs/json (OpenAPI 3.1)",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -429,16 +437,22 @@
               "name": "POST /api/v1/funcionarios",
               "request": {
                 "method": "POST",
-                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"nome\": \"João Silva\",\n  \"email\": \"joao.silva@hr-core.local\",\n  \"cpf\": \"123.456.789-00\",\n  \"data_admissao\": \"2025-01-15\"\n}"
+                  "raw": "{\n  \"nome\": \"Daniela Rocha\",\n  \"cpf\": \"248.438.034-80\",\n  \"email\": \"daniela.rocha@hr-core.local\",\n  \"telefone\": \"11999990004\",\n  \"cargo\": \"Recrutadora\",\n  \"departamento\": \"Recursos Humanos\"\n}"
                 },
                 "url": {
                   "raw": "{{gateway_url}}/api/v1/funcionarios",
                   "host": ["{{gateway_url}}"],
                   "path": ["api", "v1", "funcionarios"]
-                }
+                },
+                "description": "Cria funcionário via API Gateway (proxy para funcionario-service). Mesmo schema do POST direto em :3002 — campos obrigatórios: nome, cpf, email, telefone, cargo, departamento. Status inicial = PENDENTE."
               }
             }
           ]
@@ -450,7 +464,12 @@
               "name": "POST /api/v1/ferias (solicitar)",
               "request": {
                 "method": "POST",
-                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"funcionario_id\": \"{{funcionario_id}}\",\n  \"data_inicio\": \"2026-07-01\",\n  \"data_fim\": \"2026-07-15\"\n}"
@@ -483,7 +502,12 @@
               "name": "POST /api/v1/avaliacoes",
               "request": {
                 "method": "POST",
-                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"funcionario_id\": \"{{funcionario_id}}\",\n  \"periodo\": \"2026-Q1\",\n  \"nota\": 4.5,\n  \"comentarios\": \"Desempenho consistente.\"\n}"
@@ -517,15 +541,442 @@
       ]
     },
     {
+      "name": "Funcionario Service (direto :3002)",
+      "description": "CRUD do Funcionario Service acessado diretamente (sem passar pelo gateway). Requer JWT do Auth Service no header `Authorization`.\n\nRBAC (ADMINISTRADOR **não** acessa este serviço — seu escopo é só CRUD de usuários no Auth):\n- `POST /funcionarios`, `DELETE /funcionarios/:id` → USUARIO\n- `GET /funcionarios`, `GET /funcionarios/:id` → USUARIO ou COORDENADOR\n\nPara usar POST/DELETE faça login como **Carla Dias** (USUARIO) — `carla.dias@hr-core.local` / `carla12345`. Login como Ana Lima (ADMINISTRADOR) responde `403` em todos os endpoints deste folder.",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{funcionario_url}}/health",
+              "host": ["{{funcionario_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "GET /metrics",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{funcionario_url}}/metrics",
+              "host": ["{{funcionario_url}}"],
+              "path": ["metrics"]
+            }
+          }
+        },
+        {
+          "name": "GET /docs/json (OpenAPI 3.x)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{funcionario_url}}/docs/json",
+              "host": ["{{funcionario_url}}"],
+              "path": ["docs", "json"]
+            }
+          }
+        },
+        {
+          "name": "POST /funcionarios (USUARIO)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('funcionario_id_atual', body.data.id);",
+                  "  pm.test('201 retorna PENDENTE + snapshot eSocial zerado', function () {",
+                  "    pm.expect(body.data.id).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.data.codigoFun).to.match(/^FUN\\d{11}$/);",
+                  "    pm.expect(body.data.codigoHR).to.match(/^HR\\d{7,}$/);",
+                  "    pm.expect(body.data.status).to.equal('PENDENTE');",
+                  "    pm.expect(body.data.score).to.equal(0);",
+                  "    pm.expect(body.data.asoValido).to.equal(false);",
+                  "    pm.expect(body.data.ctpsDigital).to.equal(false);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Daniela Rocha\",\n  \"cpf\": \"248.438.034-80\",\n  \"email\": \"daniela.rocha@hr-core.local\",\n  \"telefone\": \"11999990004\",\n  \"cargo\": \"Recrutadora\",\n  \"departamento\": \"Recursos Humanos\"\n}"
+            },
+            "url": {
+              "raw": "{{funcionario_url}}/funcionarios",
+              "host": ["{{funcionario_url}}"],
+              "path": ["funcionarios"]
+            },
+            "description": "Cria funcionário. Emite codigoFun (determinístico do CPF) e codigoHR (sequencial atômico via contadores). Status inicial = PENDENTE — só vira ATIVO após o workflow de admissão (upload de documentos + aprovação do coordenador + validação eSocial completa)."
+          }
+        },
+        {
+          "name": "GET /funcionarios (USUARIO/COORDENADOR)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{funcionario_url}}/funcionarios?page=1&limit=20",
+              "host": ["{{funcionario_url}}"],
+              "path": ["funcionarios"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "ATIVO",
+                  "disabled": true
+                },
+                {
+                  "key": "departamento",
+                  "value": "Tecnologia",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lista paginada (envelope `{ data, meta: { total, page, limit, pages } }`). Filtros opcionais por `status` e `departamento`."
+          }
+        },
+        {
+          "name": "GET /funcionarios/:id (USUARIO/COORDENADOR)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{funcionario_url}}/funcionarios/{{funcionario_id_atual}}",
+              "host": ["{{funcionario_url}}"],
+              "path": ["funcionarios", "{{funcionario_id_atual}}"]
+            }
+          }
+        },
+        {
+          "name": "POST /funcionarios/:id/documentos (USUARIO, multipart)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{funcionario_url}}/funcionarios/{{funcionario_id_atual}}/documentos",
+              "host": ["{{funcionario_url}}"],
+              "path": ["funcionarios", "{{funcionario_id_atual}}", "documentos"]
+            },
+            "description": "Envia um documento do funcionário (multipart/form-data). Campo \"tipo\" obrigatório. Campo \"file\" obrigatório — selecione um arquivo PDF/JPEG/PNG até 10 MB. Primeiro upload de um funcionário PENDENTE o transiciona para EM_VALIDACAO.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "tipo",
+                  "type": "text",
+                  "value": "RG",
+                  "description": "RG | CPF | CTPS_DIGITAL | ASO_ADMISSIONAL | PIS | COMPROVANTE_ENDERECO"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('documento_id_atual', body.data.id);",
+                  "  pm.test('201 retorna documento PENDENTE + downloadUrl assinada', function () {",
+                  "    pm.expect(body.data.id).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.data.status).to.equal('PENDENTE');",
+                  "    pm.expect(body.data.downloadUrl).to.be.a('string').and.match(/^https?:/);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /funcionarios/:id/documentos (USUARIO/COORDENADOR)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{funcionario_url}}/funcionarios/{{funcionario_id_atual}}/documentos",
+              "host": ["{{funcionario_url}}"],
+              "path": ["funcionarios", "{{funcionario_id_atual}}", "documentos"]
+            },
+            "description": "Lista documentos do funcionário com URL assinada para download (presigned, 900s por default)."
+          }
+        },
+        {
+          "name": "POST /documentos/:id/aprovar (COORDENADOR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{funcionario_url}}/documentos/{{documento_id_atual}}/aprovar",
+              "host": ["{{funcionario_url}}"],
+              "path": ["documentos", "{{documento_id_atual}}", "aprovar"]
+            },
+            "description": "Aprova documento PENDENTE. Recalcula score do funcionário. Se score=100 + asoValido + ctpsDigital, transita o funcionário automaticamente para ATIVO (EM_VALIDACAO → APROVADO → ATIVO).",
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('200 retorna documento APROVADO', function () {",
+                  "    pm.expect(pm.response.json().data.status).to.equal('APROVADO');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /documentos/:id/rejeitar (COORDENADOR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{funcionario_url}}/documentos/{{documento_id_atual}}/rejeitar",
+              "host": ["{{funcionario_url}}"],
+              "path": ["documentos", "{{documento_id_atual}}", "rejeitar"]
+            },
+            "description": "Rejeita documento PENDENTE com motivo. Usuário pode reenviar.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"documento ilegível\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /funcionarios/:id/documentos/aprovar-pendentes (COORDENADOR — bulk)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test('200 retorna resumo do bulk-approve', function () {",
+                  "    pm.expect(body.data.aprovados).to.be.a('number').and.to.be.at.least(0);",
+                  "    pm.expect(body.data.score).to.be.within(0, 100);",
+                  "    pm.expect(['PENDENTE','EM_VALIDACAO','APROVADO','ATIVO','REPROVADO']).to.include(body.data.statusFuncionario);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{funcionario_url}}/funcionarios/{{funcionario_id_atual}}/documentos/aprovar-pendentes",
+              "host": ["{{funcionario_url}}"],
+              "path": [
+                "funcionarios",
+                "{{funcionario_id_atual}}",
+                "documentos",
+                "aprovar-pendentes"
+              ]
+            },
+            "description": "Atalho de produtividade: aprova em batch todos os documentos PENDENTES do funcionário numa única request. Recalcula score 1× no fim e, se eSocial completar (score=100 + asoValido + ctpsDigital), transita o funcionário automaticamente de EM_VALIDACAO → APROVADO → ATIVO.\n\nResponse data: { funcionarioId, aprovados, score, asoValido, ctpsDigital, statusFuncionario }.\n\nIdempotente — sem pendentes retorna aprovados=0 com snapshot atual. Coexiste com POST /documentos/:id/aprovar individual."
+          }
+        },
+        {
+          "name": "PATCH /funcionarios/:id (USUARIO — cria Aprovação PENDENTE)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{funcionario_url}}/funcionarios/{{funcionario_id_atual}}",
+              "host": ["{{funcionario_url}}"],
+              "path": ["funcionarios", "{{funcionario_id_atual}}"]
+            },
+            "description": "NÃO aplica direto — cria uma Aprovação PENDENTE com o payload. Só efetiva após POST /aprovacoes/:id/aprovar [COORDENADOR]. Campos aceitos: telefone, cargo, departamento, gestorId.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cargo\": \"Tech Lead\",\n  \"departamento\": \"Engenharia\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('aprovacao_id_atual', body.data.id);",
+                  "  pm.test('202 retorna Aprovação PENDENTE', function () {",
+                  "    pm.expect(body.data.status).to.equal('PENDENTE');",
+                  "    pm.expect(body.data.tipo).to.equal('ALTERACAO_CADASTRAL');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /aprovacoes?status=PENDENTE (COORDENADOR)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{funcionario_url}}/aprovacoes?status=PENDENTE",
+              "host": ["{{funcionario_url}}"],
+              "path": ["aprovacoes?status=PENDENTE"]
+            },
+            "description": "Lista aprovações cadastrais. Filtros: status, funcionarioId."
+          }
+        },
+        {
+          "name": "GET /aprovacoes/:id (COORDENADOR)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{funcionario_url}}/aprovacoes/{{aprovacao_id_atual}}",
+              "host": ["{{funcionario_url}}"],
+              "path": ["aprovacoes", "{{aprovacao_id_atual}}"]
+            },
+            "description": "Detalha uma aprovação cadastral por id."
+          }
+        },
+        {
+          "name": "POST /aprovacoes/:id/aprovar (COORDENADOR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{funcionario_url}}/aprovacoes/{{aprovacao_id_atual}}/aprovar",
+              "host": ["{{funcionario_url}}"],
+              "path": ["aprovacoes", "{{aprovacao_id_atual}}", "aprovar"]
+            },
+            "description": "Aplica os camposAlterados no funcionário e marca a Aprovação como APROVADA.",
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            }
+          }
+        },
+        {
+          "name": "POST /aprovacoes/:id/rejeitar (COORDENADOR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{funcionario_url}}/aprovacoes/{{aprovacao_id_atual}}/rejeitar",
+              "host": ["{{funcionario_url}}"],
+              "path": ["aprovacoes", "{{aprovacao_id_atual}}", "rejeitar"]
+            },
+            "description": "Rejeita a alteração cadastral. Snapshot do funcionário não é alterado.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"cargo solicitado não existe\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /funcionarios/:id (USUARIO — soft delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{funcionario_url}}/funcionarios/{{funcionario_id_atual}}",
+              "host": ["{{funcionario_url}}"],
+              "path": ["funcionarios", "{{funcionario_id_atual}}"]
+            },
+            "description": "Marca status como DESLIGADO (soft delete). Segunda chamada no mesmo id → 409 funcionario-ja-desligado."
+          }
+        }
+      ]
+    },
+    {
       "name": "Errors (RFC 7807)",
       "description": "Cenários negativos que validam o contrato de erro do gateway e do auth.",
       "item": [
         {
           "name": "401 — login com senha errada (auth)",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"senhaerrada\"\n}"
@@ -540,9 +991,16 @@
         {
           "name": "409 — register email duplicado (auth)",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"qualquer-senha-123\"\n}"
@@ -557,9 +1015,16 @@
         {
           "name": "401 — refresh token inválido (auth)",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"refreshToken\": \"token.invalido.aqui\"\n}"
@@ -574,9 +1039,16 @@
         {
           "name": "400 — payload com schema inválido (Zod)",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"nao-eh-email\",\n  \"password\": \"x\"\n}"
@@ -591,7 +1063,9 @@
         {
           "name": "401 — proxy sem Authorization (gateway)",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -604,9 +1078,16 @@
         {
           "name": "401 — proxy com Bearer inválido (gateway)",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer token-fake-aqui" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer token-fake-aqui"
+              }
+            ],
             "url": {
               "raw": "{{gateway_url}}/api/v1/funcionarios",
               "host": ["{{gateway_url}}"],
@@ -617,13 +1098,51 @@
         {
           "name": "404 — rota inexistente (gateway)",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{gateway_url}}/rota-que-nao-existe",
               "host": ["{{gateway_url}}"],
               "path": ["rota-que-nao-existe"]
+            }
+          }
+        },
+        {
+          "name": "401 — funcionario sem Authorization",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{funcionario_url}}/funcionarios",
+              "host": ["{{funcionario_url}}"],
+              "path": ["funcionarios"]
+            }
+          }
+        },
+        {
+          "name": "422 — funcionario com CPF inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Teste\",\n  \"cpf\": \"000.000.000-00\",\n  \"email\": \"cpf-invalido@hr-core.local\",\n  \"telefone\": \"11999999999\",\n  \"cargo\": \"Dev\",\n  \"departamento\": \"Tech\"\n}"
+            },
+            "url": {
+              "raw": "{{funcionario_url}}/funcionarios",
+              "host": ["{{funcionario_url}}"],
+              "path": ["funcionarios"]
             }
           }
         }
