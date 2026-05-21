@@ -211,6 +211,15 @@ A chave pública é buscada uma única vez por `kid` e mantida em cache (TTL **1
 
 Serviços não definidos não registram rota — o gateway responde 404 para o prefixo correspondente. O `/v1` é uma decisão do gateway: os downstreams recebem o path **sem** a versão (ex.: `/api/v1/funcionarios/abc` → `/funcionarios/abc` no upstream).
 
+**Portas reais dos downstreams quando rodando localmente:**
+
+| Serviço              | URL container-to-container        | URL host (pnpm dev)     |
+| -------------------- | --------------------------------- | ----------------------- |
+| `funcionario`        | `http://funcionario-service:3002` | `http://localhost:3002` |
+| `ferias`             | _(não implementado)_              | _(não implementado)_    |
+| `avaliacao`          | _(não implementado)_              | _(não implementado)_    |
+| `folha-de-pagamento` | _(não implementado)_              | _(não implementado)_    |
+
 ---
 
 ## Execução
