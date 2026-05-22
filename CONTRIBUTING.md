@@ -1,6 +1,6 @@
 # Contribuindo com o HR Core
 
-Bem-vindo. Este guia descreve o **processo de contribuição**: como nomear branches, como escrever commits, como abrir PRs e como o código entra na `main`. Para padrões **arquiteturais** (estrutura de microsserviço, regras de negócio, etc.), veja [`CLAUDE.md`](./CLAUDE.md).
+Bem-vindo. Este guia descreve o **processo de contribuição**: como nomear branches, como escrever commits, como abrir PRs e como o código entra na `main`. Para padrões **arquiteturais** (estrutura de microsserviço, regras de negócio, etc.).
 
 ---
 
