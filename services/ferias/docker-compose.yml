@@ -1,0 +1,165 @@
+# Stack local do Ferias Service.
+# Portas host isoladas (não colidem com nenhum outro stack):
+#   ferias       : 3003   →  3003 do container
+#   mongo        : 27019  →  27017 do container
+#   tempo HTTP   : 3212   →  3200
+#   tempo OTLP   : 4330   →  4318
+#   prometheus   : 9093   →  9090
+#   grafana      : 3013   →  3000
+#
+# JWKS: aponta para o Auth Service real rodando no host
+# (`pnpm --filter @hr-core/auth compose:up`) via host.docker.internal:4000.
+#
+# Subir tudo:    docker compose --project-directory . -f docker-compose.yml up -d --build
+# Derrubar tudo: docker compose --project-directory . -f docker-compose.yml down -v
+
+name: hr-core-ferias
+
+services:
+  ferias-service:
+    build:
+      context: ../..
+      dockerfile: services/ferias/Dockerfile
+    image: hr-core/ferias:local
+    container_name: hr-core-ferias
+    restart: unless-stopped
+    ports:
+      - '3003:3003'
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: '3003'
+      LOG_LEVEL: info
+
+      MONGO_URL: mongodb://mongo:27017
+      MONGO_DB_NAME: hr-ferias
+
+      AUTH_JWKS_URL: ${AUTH_JWKS_URL:-http://host.docker.internal:4000/.well-known/jwks.json}
+      AUTH_JWT_ISSUER: https://auth.hr-core.local
+      AUTH_JWT_AUDIENCE: hr-core
+
+      SWAGGER_ENABLED: 'true'
+      SWAGGER_ROUTE_PREFIX: /docs
+
+      CORS_ORIGINS: 'http://localhost:3000,http://localhost:5173'
+      CORS_CREDENTIALS: 'true'
+      CORS_MAX_AGE: '86400'
+
+      OTEL_ENABLED: 'true'
+      OTEL_SERVICE_NAME: ferias
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+
+      # Jobs ativos em produção; em testes use JOBS_ENABLED=false.
+      JOBS_ENABLED: 'true'
+      JOBS_INTERVAL_SECONDS: '86400'
+      JOBS_INITIAL_DELAY_SECONDS: '60'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    depends_on:
+      mongo:
+        condition: service_healthy
+      tempo:
+        condition: service_started
+    networks:
+      - hr-ferias
+
+  mongo:
+    image: mongo:7
+    container_name: hr-core-ferias-mongo
+    restart: unless-stopped
+    command: ['--bind_ip_all', '--quiet']
+    ports:
+      - '27019:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand({ ping: 1 })']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - hr-ferias
+
+  mongo-exporter:
+    image: percona/mongodb_exporter:0.40
+    container_name: hr-core-ferias-mongo-exporter
+    restart: unless-stopped
+    command:
+      - '--mongodb.uri=mongodb://mongo:27017'
+      - '--collect-all'
+      - '--compatible-mode'
+      - '--web.listen-address=:9216'
+    expose:
+      - '9216'
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - hr-ferias
+
+  tempo:
+    image: grafana/tempo:2.10.5
+    container_name: hr-core-ferias-tempo
+    restart: unless-stopped
+    command: ['-config.file=/etc/tempo.yaml']
+    volumes:
+      - ./docker/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - '3212:3200'
+      - '4330:4318'
+    networks:
+      - hr-ferias
+
+  prometheus:
+    image: prom/prometheus:v3.11.3
+    container_name: hr-core-ferias-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=2h'
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - '9093:9090'
+    networks:
+      - hr-ferias
+    depends_on:
+      - ferias-service
+
+  grafana:
+    image: grafana/grafana:13.0.1
+    container_name: hr-core-ferias-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: administrador
+      GF_SECURITY_ADMIN_PASSWORD: 1qaz2wsx12
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+      GF_AUTH_DISABLE_LOGIN_FORM: 'false'
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor
+    volumes:
+      - ./docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./docker/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - '3013:3000'
+    networks:
+      - hr-ferias
+    depends_on:
+      - prometheus
+      - tempo
+
+volumes:
+  mongo-data:
+  tempo-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  hr-ferias:
+    driver: bridge

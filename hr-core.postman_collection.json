@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8d7a3c12-4b2e-4f1a-9c5e-1a2b3c4d5e6f",
     "name": "HR Core",
-    "description": "Collection completa do HR Core — Auth Service + API Gateway + Funcionario Service + microsserviços downstream.\n\n## Como usar\n\n1. Importe este arquivo no Postman.\n2. Suba as stacks: `pnpm --filter @hr-core/auth compose:up` (auth + mongo + obs), `pnpm --filter @hr-core/funcionario compose:up` (funcionario + mongo + obs) e (opcional) `pnpm --filter @hr-core/api-gateway compose:up` (gateway + obs).\n3. Rode os seeds:\n   - `pnpm --filter @hr-core/auth seed` — cria 3 usuários (ADMINISTRADOR, COORDENADOR, USUARIO)\n   - `pnpm --filter @hr-core/funcionario seed` — cria 3 funcionários (Ana, Bruno, Carla) usando os mesmos emails do auth\n4. Execute `Auth Service / POST /auth/login (admin seed)` — o test script salva `access_token` e `refresh_token` automaticamente em variáveis da collection.\n5. As demais requests autenticadas usam `{{access_token}}` no header `Authorization: Bearer ...`.\n\n## Credenciais seed — Auth + Funcionario (mesmos emails)\n\n| Nome         | Email                       | Senha        | Role            | Departamento      | Cargo          |\n|--------------|-----------------------------|--------------|-----------------|-------------------|----------------|\n| Ana Lima     | `ana.lima@hr-core.local`    | `ana12345`   | `ADMINISTRADOR` | Tecnologia        | Desenvolvedora |\n| Bruno Costa  | `bruno.costa@hr-core.local` | `bruno12345` | `COORDENADOR`   | Recursos Humanos  | Coordenador    |\n| Carla Dias   | `carla.dias@hr-core.local`  | `carla12345` | `USUARIO`       | Financeiro        | Analista       |\n\n## Convenções\n\n- Datas em ISO 8601 (`YYYY-MM-DDTHH:mm:ssZ`)\n- Erros seguem RFC 7807 (`application/problem+json`) com `traceId`\n- `X-Trace-Id` é injetado em toda request por pre-request script global\n\n## Folders\n\n- **Auth Service (direto :4000)** — endpoints do auth-service sem passar pelo gateway\n- **API Gateway (:3000)** — endpoints públicos do gateway + proxy para microsserviços\n- **Funcionario Service (direto :3002)** — CRUD direto, sem passar pelo gateway\n- **Errors (RFC 7807)** — cenários de erro para validar o contrato\n",
+    "description": "Collection completa do HR Core — Auth Service + API Gateway + Funcionario Service + Ferias Service + microsserviços downstream.\n\n## Como usar\n\n1. Importe este arquivo no Postman.\n2. Suba as stacks: `pnpm --filter @hr-core/auth compose:up` (auth + mongo + obs), `pnpm --filter @hr-core/funcionario compose:up`, `pnpm --filter @hr-core/ferias compose:up` e (opcional) `pnpm --filter @hr-core/api-gateway compose:up`.\n3. Rode os seeds:\n   - `pnpm --filter @hr-core/auth seed` — cria 3 usuários (ADMINISTRADOR, COORDENADOR, USUARIO)\n   - `pnpm --filter @hr-core/funcionario seed` — cria 3 funcionários (Ana, Bruno, Carla) usando os mesmos emails do auth\n4. Execute `Auth Service / POST /auth/login` — o test script salva `access_token` e `refresh_token` automaticamente em variáveis da collection.\n5. As demais requests autenticadas usam `{{access_token}}` no header `Authorization: Bearer ...`.\n\n## Bootstrap do fluxo de férias\n\nO Ferias Service depende de um `funcionarioId` com período aquisitivo iniciado (em produção via consumer Kafka `FuncionarioCriado`; hoje, via endpoint admin temporário).\n\n1. Crie/obtenha um funcionário (use `Funcionario Service / POST /funcionarios` — o test salva em `funcionario_id_atual`).\n2. Faça login como **ADMINISTRADOR** (`ana.lima@hr-core.local`) — necessário para `POST /admin/iniciar-periodo`.\n3. Chame `Ferias Service / POST /admin/iniciar-periodo` com `dataInicio` ≥ 12 meses atrás (precisa ter ≥1 ano de empresa para solicitar férias).\n4. Faça login como **USUARIO** (Carla Dias) e chame `POST /funcionarios/:funcionarioId/solicitacoes`.\n5. Volte para **COORDENADOR** (Bruno Costa) e aprove com `POST /solicitacoes/:id/aprovar`.\n\n## Credenciais seed — Auth + Funcionario (mesmos emails)\n\n| Nome         | Email                       | Senha        | Role            | Departamento      | Cargo          |\n|--------------|-----------------------------|--------------|-----------------|-------------------|----------------|\n| Ana Lima     | `ana.lima@hr-core.local`    | `ana12345`   | `ADMINISTRADOR` | Tecnologia        | Desenvolvedora |\n| Bruno Costa  | `bruno.costa@hr-core.local` | `bruno12345` | `COORDENADOR`   | Recursos Humanos  | Coordenador    |\n| Carla Dias   | `carla.dias@hr-core.local`  | `carla12345` | `USUARIO`       | Financeiro        | Analista       |\n\n## Convenções\n\n- Datas em ISO 8601 (`YYYY-MM-DDTHH:mm:ssZ`)\n- Erros seguem RFC 7807 (`application/problem+json`) com `traceId`\n- `X-Trace-Id` é injetado em toda request por pre-request script global\n\n## Folders\n\n- **Auth Service (direto :4000)** — endpoints do auth-service sem passar pelo gateway\n- **API Gateway (:3000)** — endpoints públicos do gateway + proxy para microsserviços\n- **Funcionario Service (direto :3002)** — CRUD direto, sem passar pelo gateway\n- **Ferias Service (direto :3003)** — Períodos Aquisitivos, Solicitações de Férias e Períodos de Gozo (CLT)\n- **Errors (RFC 7807)** — cenários de erro para validar o contrato\n",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -66,6 +66,12 @@
       "description": "URL direta do Funcionario Service"
     },
     {
+      "key": "ferias_url",
+      "value": "http://localhost:3003",
+      "type": "string",
+      "description": "URL direta do Ferias Service"
+    },
+    {
       "key": "admin_email",
       "value": "ana.lima@hr-core.local",
       "type": "string",
@@ -125,6 +131,18 @@
       "key": "ferias_id",
       "value": "550e8400-e29b-41d4-a716-446655440010",
       "type": "string"
+    },
+    {
+      "key": "solicitacao_id_atual",
+      "value": "",
+      "type": "string",
+      "description": "ID da última SolicitacaoFerias criada via POST /funcionarios/:id/solicitacoes (preenchido automaticamente)"
+    },
+    {
+      "key": "periodo_gozo_id_atual",
+      "value": "",
+      "type": "string",
+      "description": "ID do último PeriodoGozo gerado ao aprovar uma solicitação (preenchido automaticamente)"
     },
     {
       "key": "avaliacao_id",
@@ -459,9 +477,10 @@
         },
         {
           "name": "Férias",
+          "description": "Proxy do gateway para o Ferias Service. Gateway reescreve `/api/v1/ferias/*` → `/*` no upstream. Para CRUD direto sem proxy, use a pasta **Ferias Service (direto :3003)**.",
           "item": [
             {
-              "name": "POST /api/v1/ferias (solicitar)",
+              "name": "POST /api/v1/ferias/funcionarios/:funcionarioId/solicitacoes (USUARIO)",
               "request": {
                 "method": "POST",
                 "header": [
@@ -472,25 +491,50 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"funcionario_id\": \"{{funcionario_id}}\",\n  \"data_inicio\": \"2026-07-01\",\n  \"data_fim\": \"2026-07-15\"\n}"
+                  "raw": "{\n  \"dataInicio\": \"2026-07-01T00:00:00Z\",\n  \"dataFim\": \"2026-07-30T00:00:00Z\",\n  \"abonoPecuniario\": false,\n  \"diasAbono\": 0\n}"
                 },
                 "url": {
-                  "raw": "{{gateway_url}}/api/v1/ferias",
+                  "raw": "{{gateway_url}}/api/v1/ferias/funcionarios/{{funcionario_id_atual}}/solicitacoes",
                   "host": ["{{gateway_url}}"],
-                  "path": ["api", "v1", "ferias"]
-                }
+                  "path": [
+                    "api",
+                    "v1",
+                    "ferias",
+                    "funcionarios",
+                    "{{funcionario_id_atual}}",
+                    "solicitacoes"
+                  ]
+                },
+                "description": "Cria solicitação de férias via gateway. Aplica todas validações CLT (≥1 ano de empresa, sem sobreposição, mínimo 5 dias, máximo 30, abono ≤ 10 dias)."
               }
             },
             {
-              "name": "POST /api/v1/ferias/:id/aprovar",
+              "name": "POST /api/v1/ferias/solicitacoes/:id/aprovar (COORD/ADMIN)",
               "request": {
                 "method": "POST",
-                "header": [],
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"salarioBruto\": 5000\n}"
+                },
                 "url": {
-                  "raw": "{{gateway_url}}/api/v1/ferias/{{ferias_id}}/aprovar",
+                  "raw": "{{gateway_url}}/api/v1/ferias/solicitacoes/{{solicitacao_id_atual}}/aprovar",
                   "host": ["{{gateway_url}}"],
-                  "path": ["api", "v1", "ferias", "{{ferias_id}}", "aprovar"]
-                }
+                  "path": [
+                    "api",
+                    "v1",
+                    "ferias",
+                    "solicitacoes",
+                    "{{solicitacao_id_atual}}",
+                    "aprovar"
+                  ]
+                },
+                "description": "Aprova solicitação via gateway. Cria PeriodoGozo e debita saldo do período aquisitivo."
               }
             }
           ]
@@ -957,6 +1001,375 @@
             },
             "description": "Marca status como DESLIGADO (soft delete). Segunda chamada no mesmo id → 409 funcionario-ja-desligado."
           }
+        }
+      ]
+    },
+    {
+      "name": "Ferias Service (direto :3003)",
+      "description": "Endpoints do Ferias Service acessados diretamente (porta 3003), sem passar pelo gateway. Requer JWT do Auth Service no header `Authorization`.\n\n## RBAC\n\n| Endpoint | Roles |\n|---|---|\n| `GET /funcionarios/:id/periodo-aquisitivo` (vigente) | USUARIO, COORDENADOR, ADMINISTRADOR |\n| `GET /funcionarios/:id/periodos-aquisitivos` (histórico) | USUARIO, COORDENADOR, ADMINISTRADOR |\n| `POST /admin/iniciar-periodo` | ADMINISTRADOR |\n| `GET /solicitacoes` (lista global) | COORDENADOR, ADMINISTRADOR |\n| `GET /funcionarios/:id/solicitacoes` | USUARIO, COORDENADOR, ADMINISTRADOR |\n| `GET /solicitacoes/:id` | USUARIO, COORDENADOR, ADMINISTRADOR |\n| `POST /funcionarios/:id/solicitacoes` | USUARIO |\n| `POST /solicitacoes/:id/aprovar` | COORDENADOR, ADMINISTRADOR |\n| `POST /solicitacoes/:id/rejeitar` | COORDENADOR, ADMINISTRADOR |\n| `POST /solicitacoes/:id/cancelar` | USUARIO (própria/PENDENTE), ADMINISTRADOR (qualquer) |\n| `GET /funcionarios/:id/periodos-gozo` | USUARIO, COORDENADOR, ADMINISTRADOR |\n| `GET /periodos-gozo/:id` | USUARIO, COORDENADOR, ADMINISTRADOR |\n\n## Regras de Negócio (CLT)\n\n- Funcionário precisa de **≥ 1 ano de empresa** para solicitar férias (período aquisitivo vigente).\n- **Sem sobreposição** de períodos para o mesmo funcionário.\n- Duração: mínimo 5 dias, máximo 30 dias por solicitação.\n- Abono pecuniário: máximo 10 dias (1/3 das férias).\n- Saldo do aquisitivo é debitado apenas ao **aprovar** a solicitação.\n- Aprovação cria automaticamente um `PeriodoGozo` vinculado.",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ferias_url}}/health",
+              "host": ["{{ferias_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "GET /health/ready",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ferias_url}}/health/ready",
+              "host": ["{{ferias_url}}"],
+              "path": ["health", "ready"]
+            }
+          }
+        },
+        {
+          "name": "GET /docs/json (OpenAPI 3.x)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ferias_url}}/docs/json",
+              "host": ["{{ferias_url}}"],
+              "path": ["docs", "json"]
+            }
+          }
+        },
+        {
+          "name": "Períodos Aquisitivos",
+          "item": [
+            {
+              "name": "POST /admin/iniciar-periodo (ADMINISTRADOR — bootstrap)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"funcionarioId\": \"{{funcionario_id_atual}}\",\n  \"cpf\": \"248.438.034-80\",\n  \"dataInicio\": \"2024-05-26T00:00:00Z\"\n}"
+                },
+                "url": {
+                  "raw": "{{ferias_url}}/admin/iniciar-periodo",
+                  "host": ["{{ferias_url}}"],
+                  "path": ["admin", "iniciar-periodo"]
+                },
+                "description": "Endpoint temporário até o consumer Kafka `FuncionarioCriado` entrar. Inicia manualmente um período aquisitivo dado funcionarioId + cpf + dataInicio (admissão).\n\nUse `dataInicio` ≥ 12 meses atrás para que o funcionário tenha saldo de férias disponível imediatamente.\n\nRequer login como ADMINISTRADOR (Ana Lima)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "  const body = pm.response.json();",
+                      "  pm.test('201 retorna PeriodoAquisitivo VIGENTE com 30 dias devidos', function () {",
+                      "    pm.expect(body.data.id).to.be.a('string').and.not.empty;",
+                      "    pm.expect(body.data.funcionarioId).to.be.a('string').and.not.empty;",
+                      "    pm.expect(body.data.codigoFun).to.match(/^FUN\\d{11}$/);",
+                      "    pm.expect(body.data.diasDevidos).to.equal(30);",
+                      "    pm.expect(body.data.diasGozados).to.equal(0);",
+                      "    pm.expect(body.data.diasVendidos).to.equal(0);",
+                      "    pm.expect(body.data.saldoDias).to.equal(30);",
+                      "    pm.expect(body.data.status).to.equal('VIGENTE');",
+                      "  });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /funcionarios/:funcionarioId/periodo-aquisitivo (vigente)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{ferias_url}}/funcionarios/{{funcionario_id_atual}}/periodo-aquisitivo",
+                  "host": ["{{ferias_url}}"],
+                  "path": ["funcionarios", "{{funcionario_id_atual}}", "periodo-aquisitivo"]
+                },
+                "description": "Retorna o período aquisitivo VIGENTE do funcionário. 404 `periodo-aquisitivo-nao-encontrado` se não há vigente."
+              }
+            },
+            {
+              "name": "GET /funcionarios/:funcionarioId/periodos-aquisitivos (histórico)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{ferias_url}}/funcionarios/{{funcionario_id_atual}}/periodos-aquisitivos",
+                  "host": ["{{ferias_url}}"],
+                  "path": ["funcionarios", "{{funcionario_id_atual}}", "periodos-aquisitivos"]
+                },
+                "description": "Lista todos os períodos aquisitivos do funcionário (VIGENTE, ENCERRADO, EXPIRADO)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Solicitações",
+          "item": [
+            {
+              "name": "POST /funcionarios/:funcionarioId/solicitacoes (USUARIO)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dataInicio\": \"2026-07-01T00:00:00Z\",\n  \"dataFim\": \"2026-07-30T00:00:00Z\",\n  \"abonoPecuniario\": false,\n  \"diasAbono\": 0\n}"
+                },
+                "url": {
+                  "raw": "{{ferias_url}}/funcionarios/{{funcionario_id_atual}}/solicitacoes",
+                  "host": ["{{ferias_url}}"],
+                  "path": ["funcionarios", "{{funcionario_id_atual}}", "solicitacoes"]
+                },
+                "description": "Cria solicitação de férias. Requer login como USUARIO (Carla Dias).\n\nValidações CLT:\n- período aquisitivo VIGENTE com saldo suficiente\n- duração entre 5 e 30 dias\n- sem sobreposição com outras solicitações ativas (PENDENTE/APROVADA) ou períodos de gozo\n- se `abonoPecuniario=true`, `diasAbono` entre 1 e 10\n\nStatus inicial = PENDENTE. O saldo só é debitado na aprovação."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "  const body = pm.response.json();",
+                      "  pm.collectionVariables.set('solicitacao_id_atual', body.data.id);",
+                      "  pm.test('201 retorna SolicitacaoFerias PENDENTE', function () {",
+                      "    pm.expect(body.data.id).to.be.a('string').and.not.empty;",
+                      "    pm.expect(body.data.codigo).to.be.a('string').and.not.empty;",
+                      "    pm.expect(body.data.status).to.equal('PENDENTE');",
+                      "    pm.expect(body.data.diasSolicitados).to.be.a('number').and.to.be.at.least(5);",
+                      "    pm.expect(body.data.periodoGozoId).to.equal(null);",
+                      "  });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /solicitacoes (COORD/ADMIN — lista global)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{ferias_url}}/solicitacoes?page=1&limit=20",
+                  "host": ["{{ferias_url}}"],
+                  "path": ["solicitacoes"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "status",
+                      "value": "PENDENTE",
+                      "description": "PENDENTE | APROVADA | REJEITADA | CANCELADA",
+                      "disabled": true
+                    },
+                    {
+                      "key": "funcionarioId",
+                      "value": "{{funcionario_id_atual}}",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Lista paginada de todas as solicitações. Filtros opcionais: `status`, `funcionarioId`. Envelope `{ data, meta: { total, page, limit, pages } }`."
+              }
+            },
+            {
+              "name": "GET /funcionarios/:funcionarioId/solicitacoes",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{ferias_url}}/funcionarios/{{funcionario_id_atual}}/solicitacoes?page=1&limit=20",
+                  "host": ["{{ferias_url}}"],
+                  "path": ["funcionarios", "{{funcionario_id_atual}}", "solicitacoes"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "status",
+                      "value": "PENDENTE",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Lista solicitações de um único funcionário (escopo USUARIO)."
+              }
+            },
+            {
+              "name": "GET /solicitacoes/:id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{ferias_url}}/solicitacoes/{{solicitacao_id_atual}}",
+                  "host": ["{{ferias_url}}"],
+                  "path": ["solicitacoes", "{{solicitacao_id_atual}}"]
+                },
+                "description": "Busca solicitação por ID."
+              }
+            },
+            {
+              "name": "POST /solicitacoes/:id/aprovar (COORD/ADMIN)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"salarioBruto\": 5000\n}"
+                },
+                "url": {
+                  "raw": "{{ferias_url}}/solicitacoes/{{solicitacao_id_atual}}/aprovar",
+                  "host": ["{{ferias_url}}"],
+                  "path": ["solicitacoes", "{{solicitacao_id_atual}}", "aprovar"]
+                },
+                "description": "Aprova solicitação PENDENTE. Efeitos:\n- Cria `PeriodoGozo` vinculado (status PROGRAMADO)\n- Debita saldo do `PeriodoAquisitivo`\n- Marca solicitação como APROVADA com `aprovadoPor` + `aprovadoEm`\n- Publica evento `ferias.approved` (Kafka — placeholder log enquanto integração não sobe)\n\n`salarioBruto` é o snapshot do salário no momento da aprovação (em produção virá do consumer `SalarioAtual` do ms-funcionario)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "  const body = pm.response.json();",
+                      "  pm.test('200 retorna solicitação APROVADA + periodoGozoId', function () {",
+                      "    pm.expect(body.data.status).to.equal('APROVADA');",
+                      "    pm.expect(body.data.periodoGozoId).to.be.a('string').and.not.empty;",
+                      "    pm.expect(body.data.aprovadoPor).to.be.a('string').and.not.empty;",
+                      "    pm.expect(body.data.aprovadoEm).to.be.a('string').and.not.empty;",
+                      "  });",
+                      "  if (body.data.periodoGozoId) {",
+                      "    pm.collectionVariables.set('periodo_gozo_id_atual', body.data.periodoGozoId);",
+                      "  }",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /solicitacoes/:id/rejeitar (COORD/ADMIN)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"justificativa\": \"período conflita com fechamento contábil\"\n}"
+                },
+                "url": {
+                  "raw": "{{ferias_url}}/solicitacoes/{{solicitacao_id_atual}}/rejeitar",
+                  "host": ["{{ferias_url}}"],
+                  "path": ["solicitacoes", "{{solicitacao_id_atual}}", "rejeitar"]
+                },
+                "description": "Rejeita solicitação PENDENTE com justificativa (3–500 chars). Saldo do aquisitivo não é alterado."
+              }
+            },
+            {
+              "name": "POST /solicitacoes/:id/cancelar (USUARIO própria/PENDENTE | ADMIN qualquer)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"motivo\": \"viagem cancelada\"\n}"
+                },
+                "url": {
+                  "raw": "{{ferias_url}}/solicitacoes/{{solicitacao_id_atual}}/cancelar",
+                  "host": ["{{ferias_url}}"],
+                  "path": ["solicitacoes", "{{solicitacao_id_atual}}", "cancelar"]
+                },
+                "description": "Cancela uma solicitação.\n\n- **USUARIO**: só pode cancelar a própria, e somente se status = PENDENTE.\n- **ADMINISTRADOR**: pode cancelar qualquer solicitação em qualquer status. Se já estava APROVADA, devolve o saldo ao período aquisitivo e cancela o PeriodoGozo associado."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Períodos de Gozo",
+          "item": [
+            {
+              "name": "GET /funcionarios/:funcionarioId/periodos-gozo",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{ferias_url}}/funcionarios/{{funcionario_id_atual}}/periodos-gozo",
+                  "host": ["{{ferias_url}}"],
+                  "path": ["funcionarios", "{{funcionario_id_atual}}", "periodos-gozo"]
+                },
+                "description": "Lista todos os períodos de gozo do funcionário (PROGRAMADO, EM_GOZO, CONCLUIDO, CANCELADO). PeriodoGozo é gerado automaticamente ao aprovar uma SolicitacaoFerias."
+              }
+            },
+            {
+              "name": "GET /periodos-gozo/:id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{ferias_url}}/periodos-gozo/{{periodo_gozo_id_atual}}",
+                  "host": ["{{ferias_url}}"],
+                  "path": ["periodos-gozo", "{{periodo_gozo_id_atual}}"]
+                },
+                "description": "Busca período de gozo por ID."
+              }
+            }
+          ]
         }
       ]
     },

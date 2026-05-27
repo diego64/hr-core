@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: hr-core-ferias-local
+
+scrape_configs:
+  - job_name: ferias
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['ferias-service:3003']
+        labels:
+          service: ferias
+          env: local
+
+  - job_name: mongo
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['mongo-exporter:9216']
+        labels:
+          service: mongo
+          db: hr-ferias
+          env: local
