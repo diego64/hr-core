@@ -3,17 +3,19 @@ import { describe, expect, it } from 'vitest'
 import { isValidRole, ROLES } from './roles.js'
 
 describe('domain.roles', () => {
-  it('exports ADMINISTRADOR, COORDENADOR and USUARIO', () => {
+  it('exports ADMINISTRADOR, COORDENADOR, USUARIO and AVALIADOR', () => {
     expect(ROLES).toContain('ADMINISTRADOR')
     expect(ROLES).toContain('COORDENADOR')
     expect(ROLES).toContain('USUARIO')
-    expect(ROLES).toHaveLength(3)
+    expect(ROLES).toContain('AVALIADOR')
+    expect(ROLES).toHaveLength(4)
   })
 
   it('isValidRole returns true for canonical roles', () => {
     expect(isValidRole('ADMINISTRADOR')).toBe(true)
     expect(isValidRole('COORDENADOR')).toBe(true)
     expect(isValidRole('USUARIO')).toBe(true)
+    expect(isValidRole('AVALIADOR')).toBe(true)
   })
 
   it('isValidRole returns false for unknown roles', () => {

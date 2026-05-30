@@ -15,11 +15,14 @@
  *     mas não cadastra.
  *   - USUARIO: operações de domínio do dia-a-dia — cadastra funcionários,
  *     solicita férias, sobe documentos. É o perfil operacional do RH.
+ *   - AVALIADOR: criado pelo ADMINISTRADOR dentro do ms-avaliacao e vinculado
+ *     a um setor. Avalia funcionários do próprio setor (título, comentário,
+ *     nota 1-5). Sem acesso a outros domínios.
  *
- * O fluxo de autenticação (POST /auth/login) é idêntico para os 3 roles;
+ * O fluxo de autenticação (POST /auth/login) é idêntico para todos os roles;
  * o que muda é a autorização nos microsserviços downstream.
  */
-export const ROLES = ['ADMINISTRADOR', 'COORDENADOR', 'USUARIO'] as const
+export const ROLES = ['ADMINISTRADOR', 'COORDENADOR', 'USUARIO', 'AVALIADOR'] as const
 
 export type Role = (typeof ROLES)[number]
 
