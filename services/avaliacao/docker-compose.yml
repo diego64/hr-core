@@ -1,6 +1,6 @@
 # Stack local do Avaliacao Service.
-# Portas host isoladas (não colidem com auth/funcionario/ferias):
-#   avaliacao    : 3004   →  3004 do container
+# Portas host isoladas (não colidem com auth/funcionario/ferias/folha-pagamento):
+#   avaliacao    : 3005   →  3004 do container
 #   mongo        : 27020  →  27017 do container
 #   tempo HTTP   : 3213   →  3200
 #   tempo OTLP   : 4331   →  4318
@@ -24,7 +24,7 @@ services:
     container_name: hr-core-avaliacao
     restart: unless-stopped
     ports:
-      - '3004:3004'
+      - '3005:3004'
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
