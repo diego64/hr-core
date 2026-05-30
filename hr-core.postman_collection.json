@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8d7a3c12-4b2e-4f1a-9c5e-1a2b3c4d5e6f",
     "name": "HR Core",
-    "description": "Collection completa do HR Core — Auth Service + API Gateway + Funcionario Service + Ferias Service + microsserviços downstream.\n\n## Como usar\n\n1. Importe este arquivo no Postman.\n2. Suba as stacks: `pnpm --filter @hr-core/auth compose:up` (auth + mongo + obs), `pnpm --filter @hr-core/funcionario compose:up`, `pnpm --filter @hr-core/ferias compose:up` e (opcional) `pnpm --filter @hr-core/api-gateway compose:up`.\n3. Rode os seeds:\n   - `pnpm --filter @hr-core/auth seed` — cria 3 usuários (ADMINISTRADOR, COORDENADOR, USUARIO)\n   - `pnpm --filter @hr-core/funcionario seed` — cria 3 funcionários (Ana, Bruno, Carla) usando os mesmos emails do auth\n4. Execute `Auth Service / POST /auth/login` — o test script salva `access_token` e `refresh_token` automaticamente em variáveis da collection.\n5. As demais requests autenticadas usam `{{access_token}}` no header `Authorization: Bearer ...`.\n\n## Bootstrap do fluxo de férias\n\nO Ferias Service depende de um `funcionarioId` com período aquisitivo iniciado (em produção via consumer Kafka `FuncionarioCriado`; hoje, via endpoint admin temporário).\n\n1. Crie/obtenha um funcionário (use `Funcionario Service / POST /funcionarios` — o test salva em `funcionario_id_atual`).\n2. Faça login como **ADMINISTRADOR** (`ana.lima@hr-core.local`) — necessário para `POST /admin/iniciar-periodo`.\n3. Chame `Ferias Service / POST /admin/iniciar-periodo` com `dataInicio` ≥ 12 meses atrás (precisa ter ≥1 ano de empresa para solicitar férias).\n4. Faça login como **USUARIO** (Carla Dias) e chame `POST /funcionarios/:funcionarioId/solicitacoes`.\n5. Volte para **COORDENADOR** (Bruno Costa) e aprove com `POST /solicitacoes/:id/aprovar`.\n\n## Credenciais seed — Auth + Funcionario (mesmos emails)\n\n| Nome         | Email                       | Senha        | Role            | Departamento      | Cargo          |\n|--------------|-----------------------------|--------------|-----------------|-------------------|----------------|\n| Ana Lima     | `ana.lima@hr-core.local`    | `ana12345`   | `ADMINISTRADOR` | Tecnologia        | Desenvolvedora |\n| Bruno Costa  | `bruno.costa@hr-core.local` | `bruno12345` | `COORDENADOR`   | Recursos Humanos  | Coordenador    |\n| Carla Dias   | `carla.dias@hr-core.local`  | `carla12345` | `USUARIO`       | Financeiro        | Analista       |\n\n## Convenções\n\n- Datas em ISO 8601 (`YYYY-MM-DDTHH:mm:ssZ`)\n- Erros seguem RFC 7807 (`application/problem+json`) com `traceId`\n- `X-Trace-Id` é injetado em toda request por pre-request script global\n\n## Folders\n\n- **Auth Service (direto :4000)** — endpoints do auth-service sem passar pelo gateway\n- **API Gateway (:3000)** — endpoints públicos do gateway + proxy para microsserviços\n- **Funcionario Service (direto :3002)** — CRUD direto, sem passar pelo gateway\n- **Ferias Service (direto :3003)** — Períodos Aquisitivos, Solicitações de Férias e Períodos de Gozo (CLT)\n- **Errors (RFC 7807)** — cenários de erro para validar o contrato\n",
+    "description": "Collection completa do HR Core — Auth Service + API Gateway + Funcionario Service + Ferias Service + microsserviços downstream.\n\n## Como usar\n\n1. Importe este arquivo no Postman.\n2. Suba as stacks: `pnpm --filter @hr-core/auth compose:up` (auth + mongo + obs), `pnpm --filter @hr-core/funcionario compose:up`, `pnpm --filter @hr-core/ferias compose:up` e (opcional) `pnpm --filter @hr-core/api-gateway compose:up`.\n3. Rode os seeds:\n   - `pnpm --filter @hr-core/auth seed` — cria 3 usuários (ADMINISTRADOR, COORDENADOR, USUARIO)\n   - `pnpm --filter @hr-core/funcionario seed` — cria 3 funcionários (Ana, Bruno, Carla) usando os mesmos emails do auth\n4. Execute `Auth Service / POST /auth/login` — o test script salva `access_token` e `refresh_token` automaticamente em variáveis da collection.\n5. As demais requests autenticadas usam `{{access_token}}` no header `Authorization: Bearer ...`.\n\n## Bootstrap do fluxo de férias\n\nO Ferias Service depende de um `funcionarioId` com período aquisitivo iniciado (em produção via consumer Kafka `FuncionarioCriado`; hoje, via endpoint admin temporário).\n\n1. Crie/obtenha um funcionário (use `Funcionario Service / POST /funcionarios` — o test salva em `funcionario_id_atual`).\n2. Faça login como **ADMINISTRADOR** (`ana.lima@hr-core.local`) — necessário para `POST /admin/iniciar-periodo`.\n3. Chame `Ferias Service / POST /admin/iniciar-periodo` com `dataInicio` ≥ 12 meses atrás (precisa ter ≥1 ano de empresa para solicitar férias).\n4. Faça login como **USUARIO** (Carla Dias) e chame `POST /funcionarios/:funcionarioId/solicitacoes`.\n5. Volte para **COORDENADOR** (Bruno Costa) e aprove com `POST /solicitacoes/:id/aprovar`.\n\n## Credenciais seed — Auth + Funcionario (mesmos emails)\n\n| Nome         | Email                       | Senha        | Role            | Departamento      | Cargo          |\n|--------------|-----------------------------|--------------|-----------------|-------------------|----------------|\n| Ana Lima     | `ana.lima@hr-core.local`    | `ana12345`   | `ADMINISTRADOR` | Tecnologia        | Desenvolvedora |\n| Bruno Costa  | `bruno.costa@hr-core.local` | `bruno12345` | `COORDENADOR`   | Recursos Humanos  | Coordenador    |\n| Carla Dias   | `carla.dias@hr-core.local`  | `carla12345` | `USUARIO`       | Financeiro        | Analista       |\n\n## Convenções\n\n- Datas em ISO 8601 (`YYYY-MM-DDTHH:mm:ssZ`)\n- Erros seguem RFC 7807 (`application/problem+json`) com `traceId`\n- `X-Trace-Id` é injetado em toda request por pre-request script global\n\n## Folders\n\n- **Auth Service (direto :4000)** — endpoints do auth-service sem passar pelo gateway\n- **API Gateway (:3000)** — endpoints públicos do gateway + proxy para microsserviços\n- **Funcionario Service (direto :3002)** — CRUD direto, sem passar pelo gateway\n- **Ferias Service (direto :3003)** — Períodos Aquisitivos, Solicitações de Férias e Períodos de Gozo (CLT)\n- **Folha de Pagamento Service (direto :3004)** — Folha CLT (mensal, adiantamento, 13º, férias) com cálculo de INSS/IRRF/FGTS\n- **Avaliacao Service (direto :3005)** — Avaliações de desempenho com nota 1-5 por setor (AVALIADOR)\n- **Errors (RFC 7807)** — cenários de erro para validar o contrato\n",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -168,6 +168,66 @@
       "key": "login_password",
       "value": "carla12345",
       "type": "string"
+    },
+    {
+      "key": "folha_url",
+      "value": "http://localhost:3004",
+      "type": "string",
+      "description": "URL direta do Folha de Pagamento Service"
+    },
+    {
+      "key": "avaliacao_url",
+      "value": "http://localhost:3005",
+      "type": "string",
+      "description": "URL direta do Avaliacao Service (host port 3005 → container 3004)"
+    },
+    {
+      "key": "folha_id_atual",
+      "value": "",
+      "type": "string",
+      "description": "UUID da última folha aberta (capturado pelo test script)"
+    },
+    {
+      "key": "folha_codigo_atual",
+      "value": "FOLHA000001",
+      "type": "string",
+      "description": "Código legível da folha (capturado pelo test script)"
+    },
+    {
+      "key": "codigo_fun_atual",
+      "value": "FUN12345678900",
+      "type": "string",
+      "description": "Código humano-legível FUN derivado do CPF"
+    },
+    {
+      "key": "competencia_atual",
+      "value": "2026-05",
+      "type": "string",
+      "description": "Competência AAAA-MM (mensal/adiantamento/férias) ou AAAA (13º)"
+    },
+    {
+      "key": "codigo_verba_atual",
+      "value": "002",
+      "type": "string",
+      "description": "Código de verba — 002 hora extra 50%, 103 vale transporte, etc."
+    },
+    {
+      "key": "avaliador_id_atual",
+      "value": "",
+      "type": "string",
+      "description": "UUID do último avaliador criado (capturado pelo test script)"
+    },
+    {
+      "key": "avaliacao_id_atual",
+      "value": "",
+      "type": "string",
+      "description": "UUID da última avaliação criada (capturado pelo test script)"
+    },
+    {
+      "key": "setor_atual",
+      "value": "Tecnologia",
+      "type": "string",
+      "description": "Setor para filtros de avaliação"
     }
   ],
   "item": [
@@ -1367,6 +1427,715 @@
                   "path": ["periodos-gozo", "{{periodo_gozo_id_atual}}"]
                 },
                 "description": "Busca período de gozo por ID."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Folha de Pagamento Service (direto :3004)",
+      "description": "Ciclo da folha CLT (mensal, adiantamento, 13º, férias) com cálculo progressivo de INSS, IRRF e FGTS 8% sobre o bruto. Workflow imutável: ABERTA → PROCESSADA → APROVADA → PAGA → FECHADA, com REJEITADA como ramo lateral. Códigos FOLHA000001+ sequenciais atômicos via contador Mongo.",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{folha_url}}/health",
+              "host": ["{{folha_url}}"],
+              "path": ["health"]
+            },
+            "description": "Liveness probe — público, sem autenticação."
+          }
+        },
+        {
+          "name": "GET /health/ready",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{folha_url}}/health/ready",
+              "host": ["{{folha_url}}"],
+              "path": ["health", "ready"]
+            },
+            "description": "Readiness probe — verifica MongoDB conectado."
+          }
+        },
+        {
+          "name": "GET /docs/json (OpenAPI 3.x)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{folha_url}}/docs/json",
+              "host": ["{{folha_url}}"],
+              "path": ["docs", "json"]
+            },
+            "description": "OpenAPI 3.1 com todas as rotas do serviço."
+          }
+        },
+        {
+          "name": "Folhas — CRUD + consulta",
+          "item": [
+            {
+              "name": "POST /folhas (COORD/ADMIN — abrir folha)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigoFun\": \"FUN12345678900\",\n  \"tipo\": \"MENSAL\",\n  \"competencia\": \"2026-05\"\n}"
+                },
+                "url": {
+                  "raw": "{{folha_url}}/folhas",
+                  "host": ["{{folha_url}}"],
+                  "path": ["folhas"]
+                },
+                "description": "Abre uma nova folha para o funcionário (cache local) e competência. Status inicial = ABERTA. Lê salário base e dependentes do cache local (populado via eventos Kafka do ms-funcionarios). Gera código FOLHA sequencial atômico.\n\nTipos:\n- MENSAL: AAAA-MM\n- ADIANTAMENTO: AAAA-MM\n- FERIAS: AAAA-MM (geralmente criada via consumer GozoConcluido)\n- DECIMO_TERCEIRO_PRIMEIRA / DECIMO_TERCEIRO_SEGUNDA: AAAA\n\nConflitos:\n- 409 folha-competencia-duplicada se já existir (codigoFun, tipo, competencia)\n- 422 funcionario-inativo, salario-nao-informado"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "  const body = pm.response.json();",
+                      "  pm.collectionVariables.set('folha_id_atual', body.data.id);",
+                      "  pm.collectionVariables.set('folha_codigo_atual', body.data.codigo);",
+                      "  pm.test('201 retorna Folha ABERTA com código FOLHA000001+', function () {",
+                      "    pm.expect(body.data.id).to.be.a('string').and.not.empty;",
+                      "    pm.expect(body.data.codigo).to.match(/^FOLHA\\d+$/);",
+                      "    pm.expect(body.data.status).to.equal('ABERTA');",
+                      "    pm.expect(body.data.salarioBase).to.be.a('number').and.greaterThan(0);",
+                      "  });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /folhas (COORD/ADMIN — lista com filtros)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{folha_url}}/folhas?page=1&limit=20",
+                  "host": ["{{folha_url}}"],
+                  "path": ["folhas"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Lista folhas com filtros opcionais: `status`, `tipo`, `funcionarioId`, `codigoFun`, `competencia`. Paginação via `page` (>=1) e `limit` (<=100, default 20)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "  const body = pm.response.json();",
+                      "  pm.test('200 retorna lista paginada', function () {",
+                      "    pm.expect(body.data).to.be.an('array');",
+                      "    pm.expect(body.meta).to.have.property('total');",
+                      "    pm.expect(body.meta).to.have.property('pages');",
+                      "  });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /folhas/:id (autenticado)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{folha_url}}/folhas/{{folha_id_atual}}",
+                  "host": ["{{folha_url}}"],
+                  "path": ["folhas", "{{folha_id_atual}}"]
+                },
+                "description": "Busca folha por ID (UUID). 404 folha-nao-encontrada se não existir."
+              }
+            },
+            {
+              "name": "GET /folhas/codigo/:codigo (autenticado)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{folha_url}}/folhas/codigo/{{folha_codigo_atual}}",
+                  "host": ["{{folha_url}}"],
+                  "path": ["folhas", "codigo", "{{folha_codigo_atual}}"]
+                },
+                "description": "Busca folha por código humano-legível (FOLHA000001)."
+              }
+            },
+            {
+              "name": "GET /funcionarios/:codigoFun/folhas (histórico do funcionário)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{folha_url}}/funcionarios/{{codigo_fun_atual}}/folhas?page=1&limit=20",
+                  "host": ["{{folha_url}}"],
+                  "path": ["funcionarios", "{{codigo_fun_atual}}", "folhas"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Histórico paginado de folhas de um funcionário (USUARIO próprio, COORDENADOR/ADMIN qualquer)."
+              }
+            },
+            {
+              "name": "GET /competencias/:competencia/folhas (COORD/ADMIN)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{folha_url}}/competencias/{{competencia_atual}}/folhas?page=1&limit=20",
+                  "host": ["{{folha_url}}"],
+                  "path": ["competencias", "{{competencia_atual}}", "folhas"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Lista todas as folhas de uma competência. Formato: AAAA-MM para mensal/adiantamento/férias, AAAA para 13º."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verbas — lançamento manual",
+          "item": [
+            {
+              "name": "POST /folhas/:id/verbas (COORD/ADMIN — lançar verba)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{codigo_verba_atual}}\",\n  \"valor\": 250.00,\n  \"referencia\": \"10h\"\n}"
+                },
+                "url": {
+                  "raw": "{{folha_url}}/folhas/{{folha_id_atual}}/verbas",
+                  "host": ["{{folha_url}}"],
+                  "path": ["folhas", "{{folha_id_atual}}", "verbas"]
+                },
+                "description": "Lança verba variável (provento ou desconto) em folha ABERTA. Códigos:\n\nProventos: 002 hora extra 50%, 003 hora extra 100%, 004 adicional noturno, 005 insalubridade, 006 periculosidade, 007 adiantamento 13º, 008 2ª parcela 13º\n\nDescontos: 103 vale transporte, 104 vale refeição, 105 plano de saúde, 106 falta injustificada, 107 atraso\n\nVerbas automáticas (001 salário base, 101 INSS, 102 IRRF, 009 férias) são calculadas pelo serviço e bloqueadas para lançamento manual (422 folha-verba-invalida).\n\nLançar o mesmo código novamente substitui o valor (upsert)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "  const body = pm.response.json();",
+                      "  pm.test('200 retorna folha com verba lançada', function () {",
+                      "    const todasAsVerbas = body.data.proventos.concat(body.data.descontos);",
+                      "    const codigo = pm.collectionVariables.get('codigo_verba_atual');",
+                      "    pm.expect(todasAsVerbas.some(v => v.codigo === codigo)).to.equal(true);",
+                      "  });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "DELETE /folhas/:id/verbas/:codigoVerba (COORD/ADMIN)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{folha_url}}/folhas/{{folha_id_atual}}/verbas/{{codigo_verba_atual}}",
+                  "host": ["{{folha_url}}"],
+                  "path": ["folhas", "{{folha_id_atual}}", "verbas", "{{codigo_verba_atual}}"]
+                },
+                "description": "Remove verba lançada manualmente. Folha precisa estar ABERTA. 404 folha-verba-nao-encontrada se o código não estiver na folha. 422 folha-verba-invalida se tentar remover verba automática."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Workflow — processar/aprovar/pagar/fechar",
+          "item": [
+            {
+              "name": "POST /folhas/:id/processar (COORD/ADMIN)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{folha_url}}/folhas/{{folha_id_atual}}/processar",
+                  "host": ["{{folha_url}}"],
+                  "path": ["folhas", "{{folha_id_atual}}", "processar"]
+                },
+                "description": "Roda os cálculos da folha: INSS progressivo, IRRF com dedução por dependente, FGTS 8% e salário líquido. Aceita também reprocessamento (PROCESSADA → PROCESSADA) para refletir lançamentos posteriores. Folha vai para status PROCESSADA."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "  const body = pm.response.json();",
+                      "  pm.test('200 retorna Folha PROCESSADA com cálculos', function () {",
+                      "    pm.expect(body.data.status).to.equal('PROCESSADA');",
+                      "    pm.expect(body.data.descontoINSS).to.be.a('number');",
+                      "    pm.expect(body.data.descontoIRRF).to.be.a('number');",
+                      "    pm.expect(body.data.fgts).to.be.a('number');",
+                      "    pm.expect(body.data.salarioLiquido).to.be.a('number');",
+                      "  });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /folhas/:id/aprovar (COORD/ADMIN)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{folha_url}}/folhas/{{folha_id_atual}}/aprovar",
+                  "host": ["{{folha_url}}"],
+                  "path": ["folhas", "{{folha_id_atual}}", "aprovar"]
+                },
+                "description": "Aprova folha PROCESSADA. Vai para status APROVADA. Publica evento FolhaAprovada. 409 folha-status-invalido se folha não estiver PROCESSADA."
+              }
+            },
+            {
+              "name": "POST /folhas/:id/rejeitar (COORD/ADMIN)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"justificativa\": \"Falta lançar hora extra do funcionário\"\n}"
+                },
+                "url": {
+                  "raw": "{{folha_url}}/folhas/{{folha_id_atual}}/rejeitar",
+                  "host": ["{{folha_url}}"],
+                  "path": ["folhas", "{{folha_id_atual}}", "rejeitar"]
+                },
+                "description": "Rejeita folha PROCESSADA com justificativa obrigatória (mínimo 3 caracteres). Folha vai para REJEITADA — a partir daí pode ser reaberta internamente para reprocessamento. Publica evento FolhaRejeitada."
+              }
+            },
+            {
+              "name": "POST /folhas/:id/confirmar-pagamento (ADMINISTRADOR)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{folha_url}}/folhas/{{folha_id_atual}}/confirmar-pagamento",
+                  "host": ["{{folha_url}}"],
+                  "path": ["folhas", "{{folha_id_atual}}", "confirmar-pagamento"]
+                },
+                "description": "Marca folha APROVADA como PAGA. Indica que o pagamento foi efetuado externamente (integração bancária). Apenas ADMINISTRADOR. Publica FolhaPaga."
+              }
+            },
+            {
+              "name": "POST /folhas/:id/fechar (ADMINISTRADOR)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{folha_url}}/folhas/{{folha_id_atual}}/fechar",
+                  "host": ["{{folha_url}}"],
+                  "path": ["folhas", "{{folha_id_atual}}", "fechar"]
+                },
+                "description": "Fecha definitivamente folha PAGA. **Status final, IMUTÁVEL** — nenhuma operação (incluindo ADMINISTRADOR) consegue alterar a folha depois disso. 409 folha-imutavel ao tentar lançar verba em folha FECHADA. Publica FolhaFechada."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Holerite",
+          "item": [
+            {
+              "name": "GET /funcionarios/:codigoFun/holerite/:competencia",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{folha_url}}/funcionarios/{{codigo_fun_atual}}/holerite/{{competencia_atual}}",
+                  "host": ["{{folha_url}}"],
+                  "path": [
+                    "funcionarios",
+                    "{{codigo_fun_atual}}",
+                    "holerite",
+                    "{{competencia_atual}}"
+                  ]
+                },
+                "description": "Holerite do funcionário em uma competência. Retorna a folha MENSAL; se não houver, cai pra ADIANTAMENTO. USUARIO acessa o próprio; COORDENADOR/ADMINISTRADOR qualquer um."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Avaliacao Service (direto :3005)",
+      "description": "Avaliações de desempenho com nota 1-5, escopo por setor. ADMINISTRADOR cria/inativa AVALIADOR vinculado a setor. AVALIADOR cria/edita avaliações apenas do próprio setor. Códigos AVA000001+ sequenciais.",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{avaliacao_url}}/health",
+              "host": ["{{avaliacao_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "GET /health/ready",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{avaliacao_url}}/health/ready",
+              "host": ["{{avaliacao_url}}"],
+              "path": ["health", "ready"]
+            }
+          }
+        },
+        {
+          "name": "GET /docs/json (OpenAPI 3.x)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{avaliacao_url}}/docs/json",
+              "host": ["{{avaliacao_url}}"],
+              "path": ["docs", "json"]
+            },
+            "description": "OpenAPI 3.1 com todas as rotas do serviço."
+          }
+        },
+        {
+          "name": "Avaliadores",
+          "item": [
+            {
+              "name": "POST /avaliadores (ADMINISTRADOR)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigoFun\": \"FUN12345678900\",\n  \"setor\": \"Tecnologia\"\n}"
+                },
+                "url": {
+                  "raw": "{{avaliacao_url}}/avaliadores",
+                  "host": ["{{avaliacao_url}}"],
+                  "path": ["avaliadores"]
+                },
+                "description": "Vincula um funcionário como AVALIADOR de um setor. Requer ADMINISTRADOR. O usuário precisa ter login no auth-service com role AVALIADOR. Um funcionário pode ser avaliador de apenas um setor."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "  const body = pm.response.json();",
+                      "  pm.collectionVariables.set('avaliador_id_atual', body.data.id);",
+                      "  pm.test('201 retorna Avaliador criado', function () {",
+                      "    pm.expect(body.data.id).to.be.a('string').and.not.empty;",
+                      "    pm.expect(body.data.setor).to.be.a('string').and.not.empty;",
+                      "    pm.expect(body.data.ativo).to.equal(true);",
+                      "  });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /avaliadores (ADMINISTRADOR)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{avaliacao_url}}/avaliadores?page=1&limit=20",
+                  "host": ["{{avaliacao_url}}"],
+                  "path": ["avaliadores"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Lista paginada de avaliadores. Filtros opcionais: `setor`, `ativo`."
+              }
+            },
+            {
+              "name": "GET /avaliadores/:id (ADMINISTRADOR)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{avaliacao_url}}/avaliadores/{{avaliador_id_atual}}",
+                  "host": ["{{avaliacao_url}}"],
+                  "path": ["avaliadores", "{{avaliador_id_atual}}"]
+                },
+                "description": "Busca avaliador por ID."
+              }
+            },
+            {
+              "name": "DELETE /avaliadores/:id (ADMINISTRADOR — inativar)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{avaliacao_url}}/avaliadores/{{avaliador_id_atual}}",
+                  "host": ["{{avaliacao_url}}"],
+                  "path": ["avaliadores", "{{avaliador_id_atual}}"]
+                },
+                "description": "Inativa o avaliador (soft delete via flag `ativo=false`). Avaliações já criadas permanecem; novas ficam bloqueadas com 403 avaliador-inativo."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Avaliações",
+          "item": [
+            {
+              "name": "POST /avaliacoes (AVALIADOR)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigoFun\": \"FUN98765432100\",\n  \"titulo\": \"Avaliação trimestral Q2/2026\",\n  \"comentario\": \"Excelente entrega no projeto X, comunicação clara com o time.\",\n  \"nota\": 5\n}"
+                },
+                "url": {
+                  "raw": "{{avaliacao_url}}/avaliacoes",
+                  "host": ["{{avaliacao_url}}"],
+                  "path": ["avaliacoes"]
+                },
+                "description": "Cria avaliação de um funcionário. Requer login como AVALIADOR. O avaliador só pode avaliar funcionários do PRÓPRIO setor — caso contrário 403 avaliador-sem-permissao-setor.\n\nNota: inteiro 1-5. Título: 3-120 caracteres. Comentário: 5-1000."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "  const body = pm.response.json();",
+                      "  pm.collectionVariables.set('avaliacao_id_atual', body.data.id);",
+                      "  pm.test('201 retorna Avaliação criada', function () {",
+                      "    pm.expect(body.data.codigo).to.match(/^AVA\\d+$/);",
+                      "    pm.expect(body.data.nota).to.be.within(1, 5);",
+                      "  });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "PUT /avaliacoes/:id (AVALIADOR autor / ADMINISTRADOR)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"titulo\": \"Avaliação trimestral Q2/2026 (revisada)\",\n  \"comentario\": \"Após revisão da entrega do projeto Y, mantenho a nota máxima.\",\n  \"nota\": 5\n}"
+                },
+                "url": {
+                  "raw": "{{avaliacao_url}}/avaliacoes/{{avaliacao_id_atual}}",
+                  "host": ["{{avaliacao_url}}"],
+                  "path": ["avaliacoes", "{{avaliacao_id_atual}}"]
+                },
+                "description": "Atualiza avaliação. AVALIADOR só atualiza as próprias; ADMINISTRADOR atualiza qualquer. Não permite trocar o `codigoFun` avaliado."
+              }
+            },
+            {
+              "name": "GET /avaliacoes (ADMINISTRADOR — lista global)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{avaliacao_url}}/avaliacoes?page=1&limit=20",
+                  "host": ["{{avaliacao_url}}"],
+                  "path": ["avaliacoes"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Lista paginada de avaliações com filtros opcionais: `setor`, `status`, `notaMin`, `notaMax`."
+              }
+            },
+            {
+              "name": "GET /avaliacoes/:id (autenticado)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{avaliacao_url}}/avaliacoes/{{avaliacao_id_atual}}",
+                  "host": ["{{avaliacao_url}}"],
+                  "path": ["avaliacoes", "{{avaliacao_id_atual}}"]
+                },
+                "description": "Busca avaliação por ID. USUARIO só vê as próprias."
+              }
+            },
+            {
+              "name": "GET /avaliacoes/codigo/:codigo",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{avaliacao_url}}/avaliacoes/codigo/AVA000001",
+                  "host": ["{{avaliacao_url}}"],
+                  "path": ["avaliacoes", "codigo", "AVA000001"]
+                },
+                "description": "Busca por código legível AVA000001+."
+              }
+            },
+            {
+              "name": "GET /funcionarios/:codigoFun/avaliacoes",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{avaliacao_url}}/funcionarios/{{codigo_fun_atual}}/avaliacoes?page=1&limit=20",
+                  "host": ["{{avaliacao_url}}"],
+                  "path": ["funcionarios", "{{codigo_fun_atual}}", "avaliacoes"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Avaliações recebidas pelo funcionário. USUARIO próprio, COORD/ADMIN qualquer."
+              }
+            },
+            {
+              "name": "GET /setores/:setor/avaliacoes (COORD/ADMIN)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{avaliacao_url}}/setores/Tecnologia/avaliacoes?page=1&limit=20",
+                  "host": ["{{avaliacao_url}}"],
+                  "path": ["setores", "Tecnologia", "avaliacoes"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Todas as avaliações de um setor — visão gerencial."
+              }
+            },
+            {
+              "name": "GET /avaliadores/:avaliadorId/avaliacoes (AVALIADOR/ADMIN)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{avaliacao_url}}/avaliadores/{{avaliador_id_atual}}/avaliacoes?page=1&limit=20",
+                  "host": ["{{avaliacao_url}}"],
+                  "path": ["avaliadores", "{{avaliador_id_atual}}", "avaliacoes"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Avaliações feitas por um avaliador específico."
               }
             }
           ]
