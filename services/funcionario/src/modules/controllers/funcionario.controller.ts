@@ -11,7 +11,7 @@ import {
 
 export function buildFuncionarioRoutes(service: FuncionarioService): FastifyPluginAsyncZod {
   return async (fastify) => {
-    // ─── POST /funcionarios  (USUARIO) ───────────────────────────────────
+    // POST /funcionarios  (USUARIO)
     fastify.post(
       '/',
       {
@@ -37,7 +37,7 @@ export function buildFuncionarioRoutes(service: FuncionarioService): FastifyPlug
       },
     )
 
-    // ─── GET /funcionarios  (USUARIO, COORDENADOR) ───────────────────────
+    // GET /funcionarios  (USUARIO, COORDENADOR)
     fastify.get(
       '/',
       {
@@ -68,7 +68,7 @@ export function buildFuncionarioRoutes(service: FuncionarioService): FastifyPlug
       },
     )
 
-    // ─── GET /funcionarios/:id  (USUARIO, COORDENADOR) ───────────────────
+    // GET /funcionarios/:id  (USUARIO, COORDENADOR)
     fastify.get(
       '/:id',
       {
@@ -86,7 +86,7 @@ export function buildFuncionarioRoutes(service: FuncionarioService): FastifyPlug
       },
     )
 
-    // ─── DELETE /funcionarios/:id  (USUARIO) ─────────────────────────────
+    // DELETE /funcionarios/:id  (USUARIO)
     fastify.delete(
       '/:id',
       {

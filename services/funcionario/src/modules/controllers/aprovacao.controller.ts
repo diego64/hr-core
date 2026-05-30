@@ -12,7 +12,7 @@ import {
 
 export function buildAprovacaoRoutes(service: AprovacaoService): FastifyPluginAsyncZod {
   return async (fastify) => {
-    // ─── PATCH /funcionarios/:id  (USUARIO, cria Aprovacao PENDENTE) ─────
+    // PATCH /funcionarios/:id  (USUARIO, cria Aprovacao PENDENTE)
     fastify.patch(
       '/funcionarios/:id',
       {
@@ -40,7 +40,7 @@ export function buildAprovacaoRoutes(service: AprovacaoService): FastifyPluginAs
       },
     )
 
-    // ─── GET /aprovacoes  (COORDENADOR) ──────────────────────────────────
+    // GET /aprovacoes  (COORDENADOR)
     fastify.get(
       '/aprovacoes',
       {
@@ -58,7 +58,7 @@ export function buildAprovacaoRoutes(service: AprovacaoService): FastifyPluginAs
       },
     )
 
-    // ─── GET /aprovacoes/:id  (COORDENADOR) ──────────────────────────────
+    // GET /aprovacoes/:id  (COORDENADOR)
     fastify.get(
       '/aprovacoes/:id',
       {
@@ -76,7 +76,7 @@ export function buildAprovacaoRoutes(service: AprovacaoService): FastifyPluginAs
       },
     )
 
-    // ─── POST /aprovacoes/:id/aprovar  (COORDENADOR) ─────────────────────
+    // POST /aprovacoes/:id/aprovar  (COORDENADOR)
     fastify.post(
       '/aprovacoes/:id/aprovar',
       {
@@ -95,7 +95,7 @@ export function buildAprovacaoRoutes(service: AprovacaoService): FastifyPluginAs
       },
     )
 
-    // ─── POST /aprovacoes/:id/rejeitar (COORDENADOR) ─────────────────────
+    // POST /aprovacoes/:id/rejeitar (COORDENADOR)
     fastify.post(
       '/aprovacoes/:id/rejeitar',
       {

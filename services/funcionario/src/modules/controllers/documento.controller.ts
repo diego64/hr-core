@@ -18,7 +18,7 @@ import {
  */
 export function buildDocumentoRoutes(service: DocumentoService): FastifyPluginAsyncZod {
   return async (fastify) => {
-    // ─── POST /funcionarios/:id/documentos (USUARIO, multipart) ──────────
+    // POST /funcionarios/:id/documentos (USUARIO, multipart)
     fastify.post(
       '/funcionarios/:id/documentos',
       {
@@ -80,7 +80,7 @@ export function buildDocumentoRoutes(service: DocumentoService): FastifyPluginAs
       },
     )
 
-    // ─── GET /funcionarios/:id/documentos (USUARIO ou COORDENADOR) ───────
+    // GET /funcionarios/:id/documentos (USUARIO ou COORDENADOR)
     fastify.get(
       '/funcionarios/:id/documentos',
       {
@@ -98,7 +98,7 @@ export function buildDocumentoRoutes(service: DocumentoService): FastifyPluginAs
       },
     )
 
-    // ─── POST /funcionarios/:id/documentos/aprovar-pendentes (COORDENADOR) ─
+    // POST /funcionarios/:id/documentos/aprovar-pendentes (COORDENADOR)
     fastify.post(
       '/funcionarios/:id/documentos/aprovar-pendentes',
       {
@@ -123,7 +123,7 @@ export function buildDocumentoRoutes(service: DocumentoService): FastifyPluginAs
       },
     )
 
-    // ─── POST /documentos/:id/aprovar (COORDENADOR) ──────────────────────
+    // POST /documentos/:id/aprovar (COORDENADOR)
     fastify.post(
       '/documentos/:id/aprovar',
       {
@@ -146,7 +146,7 @@ export function buildDocumentoRoutes(service: DocumentoService): FastifyPluginAs
       },
     )
 
-    // ─── POST /documentos/:id/rejeitar (COORDENADOR) ─────────────────────
+    // POST /documentos/:id/rejeitar (COORDENADOR)
     fastify.post(
       '/documentos/:id/rejeitar',
       {

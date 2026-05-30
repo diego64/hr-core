@@ -10,7 +10,7 @@ import {
 
 export function buildPeriodoGozoRoutes(service: PeriodoGozoService): FastifyPluginAsyncZod {
   return async (fastify) => {
-    // ─── GET /funcionarios/:funcionarioId/periodos-gozo ──────────────────
+    // GET /funcionarios/:funcionarioId/periodos-gozo
     fastify.get(
       '/funcionarios/:funcionarioId/periodos-gozo',
       {
@@ -31,7 +31,7 @@ export function buildPeriodoGozoRoutes(service: PeriodoGozoService): FastifyPlug
       },
     )
 
-    // ─── GET /periodos-gozo/:id ──────────────────────────────────────────
+    // GET /periodos-gozo/:id
     fastify.get(
       '/periodos-gozo/:id',
       {

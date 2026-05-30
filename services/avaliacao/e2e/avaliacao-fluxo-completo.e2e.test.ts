@@ -109,7 +109,7 @@ describe('E2E — fluxo completo de avaliador e avaliação', () => {
     })
   })
 
-  // ─── auth / authz ────────────────────────────────────────────────────
+  // auth / authz
   it('POST /avaliadores sem token → 401 RFC 7807', async () => {
     const res = await app.inject({
       method: 'POST',
@@ -150,7 +150,7 @@ describe('E2E — fluxo completo de avaliador e avaliação', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  // ─── workflow completo ──────────────────────────────────────────────
+  // workflow completo
   it('fluxo: ADMIN cria avaliador → AVALIADOR cria avaliação → listar', async () => {
     // 1) ADMIN cria avaliador vinculando usuarioId='avaliador-user-id' ao setor TI
     const criarAvaliador = await app.inject({

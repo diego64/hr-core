@@ -12,7 +12,7 @@ export class DomainError extends Error {
   }
 }
 
-// ─── Recursos não encontrados ──────────────────────────────────────────────
+// Recursos não encontrados
 export class FolhaNaoEncontradaError extends DomainError {
   constructor(idOuCodigo: string) {
     super({
@@ -46,7 +46,7 @@ export class HoleriteNaoEncontradoError extends DomainError {
   }
 }
 
-// ─── Conflitos de estado (409) ─────────────────────────────────────────────
+// Conflitos de estado (409)
 export class FolhaCompetenciaDuplicadaError extends DomainError {
   constructor(codigoFun: string, tipo: string, competencia: string) {
     super({
@@ -91,7 +91,7 @@ export class TransicaoFolhaInvalidaError extends DomainError {
   }
 }
 
-// ─── Regras de domínio (422) ───────────────────────────────────────────────
+// Regras de domínio (422)
 export class JustificativaRejeicaoObrigatoriaError extends DomainError {
   constructor() {
     super({

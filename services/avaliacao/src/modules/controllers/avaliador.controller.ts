@@ -11,7 +11,7 @@ import {
 
 export function buildAvaliadorRoutes(service: AvaliadorService): FastifyPluginAsyncZod {
   return async (fastify) => {
-    // ─── GET /avaliadores (ADMIN) ──────────────────────────────────────
+    // GET /avaliadores (ADMIN)
     fastify.get(
       '/avaliadores',
       {
@@ -33,7 +33,7 @@ export function buildAvaliadorRoutes(service: AvaliadorService): FastifyPluginAs
       },
     )
 
-    // ─── GET /avaliadores/:id (ADMIN) ──────────────────────────────────
+    // GET /avaliadores/:id (ADMIN)
     fastify.get(
       '/avaliadores/:id',
       {
@@ -51,7 +51,7 @@ export function buildAvaliadorRoutes(service: AvaliadorService): FastifyPluginAs
       },
     )
 
-    // ─── POST /avaliadores (ADMIN) ─────────────────────────────────────
+    // POST /avaliadores (ADMIN)
     fastify.post(
       '/avaliadores',
       {
@@ -78,7 +78,7 @@ export function buildAvaliadorRoutes(service: AvaliadorService): FastifyPluginAs
       },
     )
 
-    // ─── DELETE /avaliadores/:id (ADMIN — desativação) ─────────────────
+    // DELETE /avaliadores/:id (ADMIN — desativação)
     fastify.delete(
       '/avaliadores/:id',
       {

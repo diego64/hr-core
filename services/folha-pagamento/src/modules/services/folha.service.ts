@@ -104,7 +104,7 @@ export class FolhaService {
     private readonly events: EventPublisher,
   ) {}
 
-  // ─── abrir ────────────────────────────────────────────────────────────
+  // abrir
   async abrir(input: AbrirFolhaInput): Promise<PublicFolha> {
     validarCompetencia(input.competencia, input.tipo)
 
@@ -153,7 +153,7 @@ export class FolhaService {
     return toPublicFolha(created)
   }
 
-  // ─── lançar verba ────────────────────────────────────────────────────
+  // lançar verba
   async lancarVerba(input: LancarVerbaInput): Promise<PublicFolha> {
     const folha = await this.repo.findById(input.folhaId)
     if (!folha) throw new FolhaNaoEncontradaError(input.folhaId)
@@ -255,7 +255,7 @@ export class FolhaService {
     return toPublicFolha(atualizada ?? folha)
   }
 
-  // ─── processar ────────────────────────────────────────────────────────
+  // processar
   async processar(input: ProcessarFolhaInput): Promise<PublicFolha> {
     const folha = await this.repo.findById(input.folhaId)
     if (!folha) throw new FolhaNaoEncontradaError(input.folhaId)
@@ -319,7 +319,7 @@ export class FolhaService {
     return toPublicFolha(atualizada ?? folha)
   }
 
-  // ─── aprovar / rejeitar ──────────────────────────────────────────────
+  // aprovar / rejeitar
   async aprovar(input: AprovarFolhaInput): Promise<PublicFolha> {
     const folha = await this.repo.findById(input.folhaId)
     if (!folha) throw new FolhaNaoEncontradaError(input.folhaId)
@@ -389,7 +389,7 @@ export class FolhaService {
     return toPublicFolha(atualizada ?? folha)
   }
 
-  // ─── confirmar pagamento / fechar ────────────────────────────────────
+  // confirmar pagamento / fechar
   async confirmarPagamento(input: ConfirmarPagamentoInput): Promise<PublicFolha> {
     const folha = await this.repo.findById(input.folhaId)
     if (!folha) throw new FolhaNaoEncontradaError(input.folhaId)
@@ -456,7 +456,7 @@ export class FolhaService {
     return toPublicFolha(atualizada ?? folha)
   }
 
-  // ─── consultas ───────────────────────────────────────────────────────
+  // consultas
   async buscarPorId(id: string): Promise<PublicFolha> {
     const folha = await this.repo.findById(id)
     if (!folha) throw new FolhaNaoEncontradaError(id)

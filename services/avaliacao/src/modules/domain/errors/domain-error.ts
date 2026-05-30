@@ -12,7 +12,7 @@ export class DomainError extends Error {
   }
 }
 
-// ─── Recursos não encontrados (404) ────────────────────────────────────────
+// Recursos não encontrados (404)
 export class AvaliadorNaoEncontradoError extends DomainError {
   constructor(id: string) {
     super({
@@ -46,7 +46,7 @@ export class FuncionarioNaoEncontradoError extends DomainError {
   }
 }
 
-// ─── Validação (422) ───────────────────────────────────────────────────────
+// Validação (422)
 export class NotaInvalidaError extends DomainError {
   constructor(valor: unknown) {
     super({
@@ -102,7 +102,7 @@ export class FuncionarioInativoError extends DomainError {
   }
 }
 
-// ─── Autorização específica de domínio (403) ───────────────────────────────
+// Autorização específica de domínio (403)
 export class SetorNaoAutorizadoError extends DomainError {
   constructor(setorAvaliador: string, setorFuncionario: string, codigoFun: string) {
     super({
@@ -136,7 +136,7 @@ export class EdicaoNaoAutorizadaError extends DomainError {
   }
 }
 
-// ─── Conflitos (409) ───────────────────────────────────────────────────────
+// Conflitos (409)
 export class AvaliadorJaExistenteError extends DomainError {
   constructor(usuarioId: string) {
     super({

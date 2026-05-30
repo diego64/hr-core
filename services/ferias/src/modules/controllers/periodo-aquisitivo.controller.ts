@@ -12,7 +12,7 @@ export function buildPeriodoAquisitivoRoutes(
   service: PeriodoAquisitivoService,
 ): FastifyPluginAsyncZod {
   return async (fastify) => {
-    // ─── GET /funcionarios/:funcionarioId/periodo-aquisitivo (vigente) ───
+    // GET /funcionarios/:funcionarioId/periodo-aquisitivo (vigente)
     fastify.get(
       '/funcionarios/:funcionarioId/periodo-aquisitivo',
       {
@@ -33,7 +33,7 @@ export function buildPeriodoAquisitivoRoutes(
       },
     )
 
-    // ─── GET /funcionarios/:funcionarioId/periodos-aquisitivos (histórico) ─
+    // GET /funcionarios/:funcionarioId/periodos-aquisitivos (histórico)
     fastify.get(
       '/funcionarios/:funcionarioId/periodos-aquisitivos',
       {
@@ -54,7 +54,7 @@ export function buildPeriodoAquisitivoRoutes(
       },
     )
 
-    // ─── POST /admin/iniciar-periodo (ADMINISTRADOR) ─────────────────────
+    // POST /admin/iniciar-periodo (ADMINISTRADOR)
     // Placeholder enquanto Kafka não está integrado. Quando o consumer de
     // FuncionarioCriado entrar no projeto, esse endpoint pode ser removido
     // ou restrito ainda mais (uso emergencial).

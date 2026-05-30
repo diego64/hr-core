@@ -19,7 +19,7 @@ const valorMonetarioSchema = z
   .nonnegative('valor não pode ser negativo')
   .finite('valor inválido')
 
-// ─── Params ────────────────────────────────────────────────────────────
+// Params
 export const idParamSchema = z.object({
   id: z.string().min(1),
 })
@@ -46,7 +46,7 @@ export const verbaParamSchema = z.object({
   codigoVerba: z.string().regex(/^\d{3}$/, 'Esperado código de 3 dígitos'),
 })
 
-// ─── Query ─────────────────────────────────────────────────────────────
+// Query
 export const listarFolhasQuerySchema = z.object({
   status: z.enum(STATUS_FOLHA).optional(),
   tipo: z.enum(TIPOS_FOLHA).optional(),
@@ -57,7 +57,7 @@ export const listarFolhasQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
 })
 
-// ─── Body ──────────────────────────────────────────────────────────────
+// Body
 export const abrirFolhaBodySchema = z.object({
   codigoFun: codigoFunSchema,
   tipo: z.enum(TIPOS_FOLHA),
@@ -75,7 +75,7 @@ export const rejeitarFolhaBodySchema = z.object({
   justificativa: z.string().min(3, 'mínimo 3 caracteres').max(500),
 })
 
-// ─── Response ──────────────────────────────────────────────────────────
+// Response
 const itemFolhaSchema = z.object({
   codigo: z.string(),
   descricao: z.string(),
