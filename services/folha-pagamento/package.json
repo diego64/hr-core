@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "compose:up": "docker compose --project-directory . -f docker-compose.yml up -d --build",
     "compose:down": "docker compose --project-directory . -f docker-compose.yml down -v --remove-orphans",
@@ -42,6 +43,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@testcontainers/mongodb": "^12.0.1",
     "@types/node": "^25.9.1",
     "@vitest/coverage-v8": "^4.1.7",
     "openapi-types": "^12.1.3",
