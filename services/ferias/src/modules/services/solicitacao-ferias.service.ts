@@ -82,7 +82,7 @@ export class SolicitacaoFeriasService {
     private readonly events: EventPublisher,
   ) {}
 
-  // ─── CRIAR ────────────────────────────────────────────────────────────
+  // CRIAR
   async criar(input: CriarSolicitacaoInput): Promise<PublicSolicitacaoFerias> {
     const aquisitivo = await this.aquisitivoService.carregarVigenteRaw(input.funcionarioId)
 
@@ -141,7 +141,7 @@ export class SolicitacaoFeriasService {
     return toPublicSolicitacaoFerias(created)
   }
 
-  // ─── APROVAR ──────────────────────────────────────────────────────────
+  // APROVAR
   async aprovar(input: AprovarSolicitacaoInput): Promise<PublicSolicitacaoFerias> {
     const solicitacao = await this.repo.findById(input.id)
     if (!solicitacao) throw new SolicitacaoNaoEncontradaError(input.id)
@@ -218,7 +218,7 @@ export class SolicitacaoFeriasService {
     return toPublicSolicitacaoFerias(atualizada!) // garantido — acabou de existir
   }
 
-  // ─── REJEITAR ─────────────────────────────────────────────────────────
+  // REJEITAR
   async rejeitar(input: RejeitarSolicitacaoInput): Promise<PublicSolicitacaoFerias> {
     if (!input.justificativa || input.justificativa.trim().length < 3) {
       throw new JustificativaObrigatoriaError()
@@ -257,7 +257,7 @@ export class SolicitacaoFeriasService {
     return toPublicSolicitacaoFerias(atualizada!)
   }
 
-  // ─── CANCELAR ─────────────────────────────────────────────────────────
+  // CANCELAR
   async cancelar(input: CancelarSolicitacaoInput): Promise<PublicSolicitacaoFerias> {
     const solicitacao = await this.repo.findById(input.id)
     if (!solicitacao) throw new SolicitacaoNaoEncontradaError(input.id)
@@ -322,7 +322,7 @@ export class SolicitacaoFeriasService {
     return toPublicSolicitacaoFerias(atualizada!)
   }
 
-  // ─── QUERIES ──────────────────────────────────────────────────────────
+  // QUERIES
   async buscarPorId(id: string): Promise<PublicSolicitacaoFerias> {
     const found = await this.repo.findById(id)
     if (!found) throw new SolicitacaoNaoEncontradaError(id)

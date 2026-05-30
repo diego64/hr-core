@@ -111,7 +111,7 @@ describe('E2E — fluxo completo da solicitação de férias', () => {
     events.reset()
   })
 
-  // ─── auth / authz ────────────────────────────────────────────────────
+  // auth / authz
   it('POST /admin/iniciar-periodo sem token → 401 RFC 7807', async () => {
     const res = await app.inject({
       method: 'POST',
@@ -144,7 +144,7 @@ describe('E2E — fluxo completo da solicitação de férias', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  // ─── workflow completo ──────────────────────────────────────────────
+  // workflow completo
   it('fluxo: ADMIN inicia período → USUARIO solicita → COORD aprova', async () => {
     // 1) ADMIN inicia período aquisitivo (1+ ano atrás)
     const iniciar = await app.inject({

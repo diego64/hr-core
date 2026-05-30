@@ -79,7 +79,7 @@ describe('funcionario app (integração)', () => {
     departamento: 'Tech',
   }
 
-  // ─── health ─────────────────────────────────────────────────────────────
+  // health
   describe('GET /health', () => {
     it('200 com service=funcionario', async () => {
       const res = await app.inject({ method: 'GET', url: '/health' })
@@ -101,7 +101,7 @@ describe('funcionario app (integração)', () => {
     })
   })
 
-  // ─── POST /funcionarios (USUARIO) ───────────────────────────────────────
+  // POST /funcionarios (USUARIO)
   describe('POST /funcionarios', () => {
     it('201 quando USUARIO cria com payload válido', async () => {
       const token = await USER_TOKEN()
@@ -235,7 +235,7 @@ describe('funcionario app (integração)', () => {
     })
   })
 
-  // ─── GET /funcionarios (USUARIO ou COORDENADOR) ──────────────────────────
+  // GET /funcionarios (USUARIO ou COORDENADOR)
   describe('GET /funcionarios', () => {
     async function seedTwo() {
       const token = await USER_TOKEN()
@@ -318,7 +318,7 @@ describe('funcionario app (integração)', () => {
     })
   })
 
-  // ─── GET /funcionarios/:id (USUARIO ou COORDENADOR) ──────────────────────
+  // GET /funcionarios/:id (USUARIO ou COORDENADOR)
   describe('GET /funcionarios/:id', () => {
     it('200 para USUARIO autenticado', async () => {
       const user = await USER_TOKEN()
@@ -397,7 +397,7 @@ describe('funcionario app (integração)', () => {
     })
   })
 
-  // ─── DELETE /funcionarios/:id (USUARIO, soft delete) ────────────────────
+  // DELETE /funcionarios/:id (USUARIO, soft delete)
   describe('DELETE /funcionarios/:id', () => {
     it('204 quando USUARIO desliga ATIVO', async () => {
       const token = await USER_TOKEN()
@@ -478,7 +478,7 @@ describe('funcionario app (integração)', () => {
     })
   })
 
-  // ─── POST /funcionarios/:id/documentos (USUARIO, multipart) ─────────────
+  // POST /funcionarios/:id/documentos (USUARIO, multipart)
   describe('POST /funcionarios/:id/documentos', () => {
     async function multipartBody(opts: {
       tipo?: string
@@ -626,7 +626,7 @@ describe('funcionario app (integração)', () => {
     })
   })
 
-  // ─── GET /funcionarios/:id/documentos (USUARIO ou COORDENADOR) ───────────
+  // GET /funcionarios/:id/documentos (USUARIO ou COORDENADOR)
   describe('GET /funcionarios/:id/documentos', () => {
     it('200 lista vazia para funcionário recém-criado', async () => {
       const token = await USER_TOKEN()
@@ -666,7 +666,7 @@ describe('funcionario app (integração)', () => {
     })
   })
 
-  // ─── POST /documentos/:id/aprovar (COORDENADOR) ──────────────────────────
+  // POST /documentos/:id/aprovar (COORDENADOR)
   describe('POST /documentos/:id/aprovar', () => {
     async function multipartBody(opts: {
       tipo: string
@@ -935,7 +935,7 @@ describe('funcionario app (integração)', () => {
     })
   })
 
-  // ─── Aprovações cadastrais ──────────────────────────────────────────────
+  // Aprovações cadastrais
   describe('Aprovações cadastrais (PATCH + workflow)', () => {
     async function criarFuncionario(token: string): Promise<string> {
       const res = await app.inject({
@@ -1146,7 +1146,7 @@ describe('funcionario app (integração)', () => {
     })
   })
 
-  // ─── /metrics ────────────────────────────────────────────────────────────
+  // /metrics
   describe('GET /metrics', () => {
     it('200 com Prometheus text format', async () => {
       await app.inject({ method: 'GET', url: '/health' })

@@ -18,7 +18,7 @@ import type { FolhaService } from '../services/folha.service.js'
 
 export function buildFolhaRoutes(service: FolhaService): FastifyPluginAsyncZod {
   return async (fastify) => {
-    // ─── Listagens ────────────────────────────────────────────────────
+    // Listagens
     fastify.get(
       '/folhas',
       {
@@ -160,7 +160,7 @@ export function buildFolhaRoutes(service: FolhaService): FastifyPluginAsyncZod {
       },
     )
 
-    // ─── Ações ────────────────────────────────────────────────────────
+    // Ações
     fastify.post(
       '/folhas',
       {
@@ -355,7 +355,7 @@ export function buildFolhaRoutes(service: FolhaService): FastifyPluginAsyncZod {
       },
     )
 
-    // ─── Holerite ────────────────────────────────────────────────────
+    // Holerite
     fastify.get(
       '/funcionarios/:codigoFun/holerite/:competencia',
       {

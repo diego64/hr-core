@@ -106,7 +106,7 @@ describe('E2E — fluxo completo da folha mensal', () => {
     })
   })
 
-  // ─── auth / authz ────────────────────────────────────────────────────
+  // auth / authz
   it('POST /folhas sem token → 401 RFC 7807', async () => {
     const res = await app.inject({
       method: 'POST',
@@ -147,7 +147,7 @@ describe('E2E — fluxo completo da folha mensal', () => {
     expect(body.detail).toMatch(/codigoFun|tipo|competencia/)
   })
 
-  // ─── workflow completo ──────────────────────────────────────────────
+  // workflow completo
   it('fluxo: abrir → lançar verba → processar → aprovar → pagar → fechar', async () => {
     // 1) COORDENADOR abre folha
     const aberta = await app.inject({

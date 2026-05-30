@@ -26,7 +26,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     cooldownDuration: 30 * 1000,
   })
 
-  // ─── authenticate ─────────────────────────────────────────────────────
+  // authenticate
   fastify.decorate('authenticate', async function authenticate(request: FastifyRequest) {
     const header = request.headers.authorization
     if (!header || !header.startsWith('Bearer ')) {
@@ -58,7 +58,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     }
   })
 
-  // ─── requireRole ──────────────────────────────────────────────────────
+  // requireRole
   fastify.decorate('requireRole', function requireRole(required: Role | readonly Role[]) {
     const allowed: readonly Role[] = typeof required === 'string' ? [required] : [...required]
 

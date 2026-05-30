@@ -12,7 +12,7 @@ export class DomainError extends Error {
   }
 }
 
-// ─── Recursos não encontrados ──────────────────────────────────────────────
+// Recursos não encontrados
 export class PeriodoAquisitivoNaoEncontradoError extends DomainError {
   constructor(funcionarioId: string) {
     super({
@@ -46,7 +46,7 @@ export class PeriodoGozoNaoEncontradoError extends DomainError {
   }
 }
 
-// ─── Regras CLT (422) ──────────────────────────────────────────────────────
+// Regras CLT (422)
 export class SaldoInsuficienteError extends DomainError {
   constructor(saldoDias: number, solicitados: number) {
     super({
@@ -139,7 +139,7 @@ export class JustificativaObrigatoriaError extends DomainError {
   }
 }
 
-// ─── Conflitos de estado (409) ─────────────────────────────────────────────
+// Conflitos de estado (409)
 export class SolicitacaoNaoPendenteError extends DomainError {
   constructor(statusAtual: string) {
     super({

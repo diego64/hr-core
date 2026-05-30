@@ -16,7 +16,7 @@ import {
 
 export function buildAvaliacaoRoutes(service: AvaliacaoService): FastifyPluginAsyncZod {
   return async (fastify) => {
-    // ─── GET /avaliacoes (ADMIN — lista global) ────────────────────────
+    // GET /avaliacoes (ADMIN — lista global)
     fastify.get(
       '/avaliacoes',
       {
@@ -38,7 +38,7 @@ export function buildAvaliacaoRoutes(service: AvaliacaoService): FastifyPluginAs
       },
     )
 
-    // ─── GET /avaliacoes/:id ───────────────────────────────────────────
+    // GET /avaliacoes/:id
     fastify.get(
       '/avaliacoes/:id',
       {
@@ -59,7 +59,7 @@ export function buildAvaliacaoRoutes(service: AvaliacaoService): FastifyPluginAs
       },
     )
 
-    // ─── GET /avaliacoes/codigo/:codigo ────────────────────────────────
+    // GET /avaliacoes/codigo/:codigo
     fastify.get(
       '/avaliacoes/codigo/:codigo',
       {
@@ -80,7 +80,7 @@ export function buildAvaliacaoRoutes(service: AvaliacaoService): FastifyPluginAs
       },
     )
 
-    // ─── GET /funcionarios/:codigoFun/avaliacoes ───────────────────────
+    // GET /funcionarios/:codigoFun/avaliacoes
     fastify.get(
       '/funcionarios/:codigoFun/avaliacoes',
       {
@@ -110,7 +110,7 @@ export function buildAvaliacaoRoutes(service: AvaliacaoService): FastifyPluginAs
       },
     )
 
-    // ─── GET /setores/:setor/avaliacoes ────────────────────────────────
+    // GET /setores/:setor/avaliacoes
     fastify.get(
       '/setores/:setor/avaliacoes',
       {
@@ -137,7 +137,7 @@ export function buildAvaliacaoRoutes(service: AvaliacaoService): FastifyPluginAs
       },
     )
 
-    // ─── GET /avaliadores/:avaliadorId/avaliacoes ──────────────────────
+    // GET /avaliadores/:avaliadorId/avaliacoes
     fastify.get(
       '/avaliadores/:avaliadorId/avaliacoes',
       {
@@ -164,7 +164,7 @@ export function buildAvaliacaoRoutes(service: AvaliacaoService): FastifyPluginAs
       },
     )
 
-    // ─── POST /avaliacoes (AVALIADOR) ──────────────────────────────────
+    // POST /avaliacoes (AVALIADOR)
     fastify.post(
       '/avaliacoes',
       {
@@ -191,7 +191,7 @@ export function buildAvaliacaoRoutes(service: AvaliacaoService): FastifyPluginAs
       },
     )
 
-    // ─── PUT /avaliacoes/:id (AVALIADOR dono | ADMIN) ──────────────────
+    // PUT /avaliacoes/:id (AVALIADOR dono | ADMIN)
     fastify.put(
       '/avaliacoes/:id',
       {

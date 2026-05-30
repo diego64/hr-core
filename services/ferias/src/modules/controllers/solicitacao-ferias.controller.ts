@@ -17,7 +17,7 @@ export function buildSolicitacaoFeriasRoutes(
   service: SolicitacaoFeriasService,
 ): FastifyPluginAsyncZod {
   return async (fastify) => {
-    // ─── GET /solicitacoes (COORD/ADMIN) ────────────────────────────────
+    // GET /solicitacoes (COORD/ADMIN)
     fastify.get(
       '/solicitacoes',
       {
@@ -51,7 +51,7 @@ export function buildSolicitacaoFeriasRoutes(
       },
     )
 
-    // ─── GET /funcionarios/:funcionarioId/solicitacoes ───────────────────
+    // GET /funcionarios/:funcionarioId/solicitacoes
     fastify.get(
       '/funcionarios/:funcionarioId/solicitacoes',
       {
@@ -89,7 +89,7 @@ export function buildSolicitacaoFeriasRoutes(
       },
     )
 
-    // ─── GET /solicitacoes/:id ───────────────────────────────────────────
+    // GET /solicitacoes/:id
     fastify.get(
       '/solicitacoes/:id',
       {
@@ -110,7 +110,7 @@ export function buildSolicitacaoFeriasRoutes(
       },
     )
 
-    // ─── POST /funcionarios/:funcionarioId/solicitacoes (USUARIO) ────────
+    // POST /funcionarios/:funcionarioId/solicitacoes (USUARIO)
     fastify.post(
       '/funcionarios/:funcionarioId/solicitacoes',
       {
@@ -137,7 +137,7 @@ export function buildSolicitacaoFeriasRoutes(
       },
     )
 
-    // ─── POST /solicitacoes/:id/aprovar (COORD/ADMIN) ────────────────────
+    // POST /solicitacoes/:id/aprovar (COORD/ADMIN)
     fastify.post(
       '/solicitacoes/:id/aprovar',
       {
@@ -163,7 +163,7 @@ export function buildSolicitacaoFeriasRoutes(
       },
     )
 
-    // ─── POST /solicitacoes/:id/rejeitar (COORD/ADMIN) ───────────────────
+    // POST /solicitacoes/:id/rejeitar (COORD/ADMIN)
     fastify.post(
       '/solicitacoes/:id/rejeitar',
       {
@@ -189,7 +189,7 @@ export function buildSolicitacaoFeriasRoutes(
       },
     )
 
-    // ─── POST /solicitacoes/:id/cancelar (USUARIO próprio/PENDENTE | ADMIN qualquer) ─
+    // POST /solicitacoes/:id/cancelar (USUARIO próprio/PENDENTE | ADMIN qualquer)
     fastify.post(
       '/solicitacoes/:id/cancelar',
       {
