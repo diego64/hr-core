@@ -18,6 +18,11 @@ export default defineConfig({
         'src/**/*.integration.test.ts',
         'src/server.ts',
         'src/tracing.ts',
+        // Apenas tipos/constantes — sem runtime para cobrir
+        'src/modules/domain/entities/auditoria.ts',
+        // Stub do Kafka; será substituído por KafkaEventPublisher quando o
+        // broker entrar — testes usam InMemoryEventPublisher.
+        'src/infrastructure/messaging/event-publisher.ts',
       ],
       thresholds: {
         lines: 80,
