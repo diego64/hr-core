@@ -242,4 +242,132 @@ describe('FolhaRepository (integration, mongo real)', () => {
     expect(page1.items).toHaveLength(2)
     expect(page1.pages).toBe(3)
   })
+
+  it('list() com todos os filtros simultaneamente combina query', async () => {
+    await repo.create({
+      codigo: 'FOLHA000001',
+      codigoFun: 'FUN12345678900',
+      funcionarioId: 'fid-1',
+      tipo: 'MENSAL',
+      competencia: '2026-05',
+      salarioBase: 5_000,
+      numeroDependentes: 0,
+      abertaPor: 'coord-1',
+    })
+    await repo.create({
+      codigo: 'FOLHA000002',
+      codigoFun: 'FUN12345678900',
+      funcionarioId: 'fid-1',
+      tipo: 'MENSAL',
+      competencia: '2026-06',
+      salarioBase: 5_000,
+      numeroDependentes: 0,
+      abertaPor: 'coord-1',
+    })
+
+    // Filtro combinado funcionarioId + tipo + competencia + status
+    const result = await repo.list(
+      {
+        funcionarioId: 'fid-1',
+        codigoFun: 'FUN12345678900',
+        tipo: 'MENSAL',
+        competencia: '2026-05',
+        status: 'ABERTA',
+      },
+      1,
+      20,
+    )
+    expect(result.total).toBe(1)
+    expect(result.items[0]!.competencia).toBe('2026-05')
+  })
+
+  it('findByCodigo() retorna match ou null', async () => {
+    await repo.create({
+      codigo: 'FOLHA000001',
+      codigoFun: 'FUN12345678900',
+      funcionarioId: 'fid-1',
+      tipo: 'MENSAL',
+      competencia: '2026-05',
+      salarioBase: 5_000,
+      numeroDependentes: 0,
+      abertaPor: 'coord-1',
+    })
+
+    expect((await repo.findByCodigo('FOLHA000001'))?.codigo).toBe('FOLHA000001')
+    expect(await repo.findByCodigo('FOLHA000999')).toBeNull()
+  })
+
+  it('findByFuncionarioCompetencia() filtra pelo tripé (codigoFun, tipo, competencia)', async () => {
+    await repo.create({
+      codigo: 'FOLHA000001',
+      codigoFun: 'FUN12345678900',
+      funcionarioId: 'fid-1',
+      tipo: 'MENSAL',
+      competencia: '2026-05',
+      salarioBase: 5_000,
+      numeroDependentes: 0,
+      abertaPor: 'coord-1',
+    })
+
+    // Match completo
+    const found = await repo.findByFuncionarioCompetencia('FUN12345678900', 'MENSAL', '2026-05')
+    expect(found?.codigo).toBe('FOLHA000001')
+
+    // Sem match para tipo diferente
+    expect(
+      await repo.findByFuncionarioCompetencia('FUN12345678900', 'ADIANTAMENTO', '2026-05'),
+    ).toBeNull()
+
+    // Sem match para competência diferente
+    expect(
+      await repo.findByFuncionarioCompetencia('FUN12345678900', 'MENSAL', '2026-06'),
+    ).toBeNull()
+  })
+
+  it('reabrir() permite folha REJEITADA voltar para ABERTA', async () => {
+    const folha = await repo.create({
+      codigo: 'FOLHA000001',
+      codigoFun: 'FUN12345678900',
+      funcionarioId: 'fid-1',
+      tipo: 'MENSAL',
+      competencia: '2026-05',
+      salarioBase: 5_000,
+      numeroDependentes: 0,
+      abertaPor: 'coord-1',
+    })
+    // ABERTA → PROCESSADA → REJEITADA
+    await repo.processar(folha._id, {
+      proventos: [],
+      descontos: [],
+      totalProventos: 5_000,
+      totalDescontos: 0,
+      salarioLiquido: 5_000,
+      descontoINSS: 0,
+      descontoIRRF: 0,
+      fgts: 400,
+      processadaPor: 'coord-1',
+    })
+    await repo.rejeitar(folha._id, 'coord-2', 'falta verba')
+
+    // Reabre — REJEITADA → ABERTA
+    expect(await repo.reabrir(folha._id)).toBe(true)
+    expect((await repo.findById(folha._id))?.status).toBe('ABERTA')
+  })
+
+  it('reabrir() em folha NÃO-REJEITADA retorna false (filter atômico)', async () => {
+    const folha = await repo.create({
+      codigo: 'FOLHA000001',
+      codigoFun: 'FUN12345678900',
+      funcionarioId: 'fid-1',
+      tipo: 'MENSAL',
+      competencia: '2026-05',
+      salarioBase: 5_000,
+      numeroDependentes: 0,
+      abertaPor: 'coord-1',
+    })
+
+    // Folha está ABERTA — reabrir não funciona (já não está REJEITADA)
+    expect(await repo.reabrir(folha._id)).toBe(false)
+    expect((await repo.findById(folha._id))?.status).toBe('ABERTA')
+  })
 })
