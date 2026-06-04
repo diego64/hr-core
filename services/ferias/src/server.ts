@@ -1,12 +1,38 @@
 import { buildApp } from './app.js'
 import { env } from './config/env.js'
 import { closeMongo, connectMongo } from './database/mongo.js'
+import { startConsumers } from './infrastructure/messaging/event-consumer.js'
+import { KafkaEventPublisher } from './infrastructure/messaging/event-publisher.js'
+import {
+  connectKafka,
+  createConsumer,
+  disconnectKafka,
+  isKafkaEnabled,
+} from './infrastructure/messaging/kafka-client.js'
+import { CONSUMER_GROUP } from './infrastructure/messaging/topics.js'
 import { startScheduler } from './jobs/scheduler.js'
 import { shutdownTracing } from './tracing.js'
 
 async function start(): Promise<void> {
   const db = await connectMongo()
-  const app = await buildApp({ db })
+
+  let kafkaEvents: KafkaEventPublisher | undefined
+  if (isKafkaEnabled()) {
+    const { producer } = await connectKafka()
+    kafkaEvents = new KafkaEventPublisher(producer, console as never)
+  }
+
+  const app = await buildApp(kafkaEvents ? { db, events: kafkaEvents } : { db })
+
+  if (kafkaEvents) {
+    Object.assign(kafkaEvents, { log: app.log })
+  }
+
+  if (isKafkaEnabled()) {
+    const consumer = createConsumer(CONSUMER_GROUP)
+    await consumer.connect()
+    await startConsumers({ consumer, log: app.log })
+  }
 
   const scheduler = startScheduler({
     db,
@@ -21,6 +47,7 @@ async function start(): Promise<void> {
     try {
       scheduler.stop()
       await app.close()
+      await disconnectKafka()
       await closeMongo()
       await shutdownTracing()
       process.exit(0)

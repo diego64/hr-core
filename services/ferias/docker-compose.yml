@@ -49,6 +49,10 @@ services:
       OTEL_SERVICE_NAME: ferias
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
 
+      # Kafka — broker compartilhado em infra/docker-compose.kafka.yml
+      KAFKA_ENABLED: ${KAFKA_ENABLED:-true}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-host.docker.internal:19092}
+
       # Jobs ativos em produção; em testes use JOBS_ENABLED=false.
       JOBS_ENABLED: 'true'
       JOBS_INTERVAL_SECONDS: '86400'

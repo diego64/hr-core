@@ -40,6 +40,12 @@ const envSchema = z.object({
     .transform((v) => v === 'true'),
   JOBS_INTERVAL_SECONDS: z.coerce.number().int().positive().default(86_400),
   JOBS_INITIAL_DELAY_SECONDS: z.coerce.number().int().nonnegative().default(60),
+
+  KAFKA_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  KAFKA_BROKERS: z.string().default('host.docker.internal:19092'),
 })
 
 export type Env = z.infer<typeof envSchema>
