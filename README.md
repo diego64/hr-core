@@ -3,13 +3,6 @@
 > Plataforma de Recursos Humanos _enterprise_, construída com arquitetura de **microserviços orientada a eventos**.
 > Gestão de funcionários, férias, avaliações e folha de pagamento — escalável, segura, modular e preparada para SaaS.
 
-[![Node](https://img.shields.io/badge/Node.js-%E2%89%A522.11-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![pnpm](https://img.shields.io/badge/pnpm-%E2%89%A511-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Fastify](https://img.shields.io/badge/Fastify-HTTP-000000?logo=fastify&logoColor=white)](https://fastify.dev)
-[![Kafka](https://img.shields.io/badge/Apache%20Kafka-KRaft-231F20?logo=apachekafka&logoColor=white)](https://kafka.apache.org)
-[![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](./LICENSE)
-
 ---
 
 ## Sumário
