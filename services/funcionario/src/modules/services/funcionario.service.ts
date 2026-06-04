@@ -1,3 +1,4 @@
+import type { EventPublisher } from '../../infrastructure/messaging/event-publisher.js'
 import {
   CpfDuplicadoError,
   EmailDuplicadoError,
@@ -23,6 +24,14 @@ export interface CriarFuncionarioInput {
   readonly cargo: string
   readonly departamento: string
   readonly gestorId?: string | null
+  /**
+   * Salário e dependentes ainda não têm domínio próprio no ms-funcionario
+   * (vem em PR futura). Quando informados — hoje só pelo seed — viajam no
+   * evento `FuncionarioCriado` para o ms-folha-pagamento popular o cache.
+   * Em produção (criação via API) ficam no default 0 até o domínio existir.
+   */
+  readonly salarioBase?: number
+  readonly numeroDependentes?: number
 }
 
 export interface ListaPublicaFuncionarios {
@@ -37,6 +46,7 @@ export class FuncionarioService {
   constructor(
     private readonly repo: FuncionarioRepository,
     private readonly contadorRepo: ContadorRepository,
+    private readonly events: EventPublisher,
   ) {}
 
   /**
@@ -75,6 +85,25 @@ export class FuncionarioService {
       departamento: input.departamento,
       gestorId: input.gestorId ?? null,
       status: 'PENDENTE',
+    })
+
+    // Publica evento de domínio APÓS persistência confirmada — padrão CLAUDE.md
+    // (salva no banco → publica no Kafka → consumidores reagem). Os consumers
+    // de folha-pagamento, ferias e avaliacao usam esse payload para popular
+    // funcionarios_cache local. salarioBase/numeroDependentes ainda não têm
+    // domínio próprio: default 0 em produção, valores do seed quando informados.
+    await this.events.publish({
+      eventType: 'FuncionarioCriado',
+      aggregateId: created._id.toHexString(),
+      payload: {
+        funcionarioId: created._id.toHexString(),
+        codigoFun: created.codigoFun,
+        codigoHR: created.codigoHR,
+        nome: created.nome,
+        setor: created.departamento,
+        salarioBase: input.salarioBase ?? 0,
+        numeroDependentes: input.numeroDependentes ?? 0,
+      },
     })
 
     return toPublicFuncionario(created)
