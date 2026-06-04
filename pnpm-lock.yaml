@@ -241,6 +241,9 @@ importers:
       jose:
         specifier: ^6.2.3
         version: 6.2.3
+      kafkajs:
+        specifier: ^2.2.4
+        version: 2.2.4
       mongodb:
         specifier: ^7.2.0
         version: 7.2.0
@@ -251,6 +254,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@testcontainers/kafka':
+        specifier: ^12.0.1
+        version: 12.0.1
       '@testcontainers/mongodb':
         specifier: ^12.0.1
         version: 12.0.1
@@ -320,6 +326,9 @@ importers:
       jose:
         specifier: ^6.2.3
         version: 6.2.3
+      kafkajs:
+        specifier: ^2.2.4
+        version: 2.2.4
       mongodb:
         specifier: ^7.2.0
         version: 7.2.0
@@ -330,6 +339,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@testcontainers/kafka':
+        specifier: ^12.0.1
+        version: 12.0.1
       '@testcontainers/mongodb':
         specifier: ^12.0.1
         version: 12.0.1
@@ -399,6 +411,9 @@ importers:
       jose:
         specifier: ^6.2.3
         version: 6.2.3
+      kafkajs:
+        specifier: ^2.2.4
+        version: 2.2.4
       mongodb:
         specifier: ^7.2.0
         version: 7.2.0
@@ -409,6 +424,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@testcontainers/kafka':
+        specifier: ^12.0.1
+        version: 12.0.1
       '@testcontainers/mongodb':
         specifier: ^12.0.1
         version: 12.0.1
@@ -487,6 +505,9 @@ importers:
       jose:
         specifier: ^6.2.3
         version: 6.2.3
+      kafkajs:
+        specifier: ^2.2.4
+        version: 2.2.4
       mongodb:
         specifier: ^7.2.0
         version: 7.2.0
@@ -497,6 +518,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@testcontainers/kafka':
+        specifier: ^12.0.1
+        version: 12.0.1
       '@types/node':
         specifier: ^25.9.1
         version: 25.9.1
@@ -1724,6 +1748,9 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
+  '@testcontainers/kafka@12.0.1':
+    resolution: {integrity: sha512-sFH5IPK3tvNgJdFcEuKq1Vj9VTTSe5/wvJcou6cWq4xHTDEjaGwKXkB3NP9KrsjDevPVs7ghuvVVjCtIHBDabQ==}
+
   '@testcontainers/mongodb@12.0.1':
     resolution: {integrity: sha512-tPIxN9blYp/UIyiTAgv/j9tDDQzysDBORvMbLbtODEaaudnh0lXJMu+u7SJpoD0rg+0VSaT23U1D413yMP9GsQ==}
 
@@ -2703,6 +2730,10 @@ packages:
 
   json-stable-stringify-without-jsonify@1.0.1:
     resolution: {integrity: sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw==}
+
+  kafkajs@2.2.4:
+    resolution: {integrity: sha512-j/YeapB1vfPT2iOIUn/vxdyKEuhuY2PxMBvf5JWux6iSaukAccrMtXEY/Lb7OvavDhOWME589bpLrEdnVHjfjA==}
+    engines: {node: '>=14.0.0'}
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -5181,6 +5212,16 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
+  '@testcontainers/kafka@12.0.1':
+    dependencies:
+      compare-versions: 6.1.1
+      testcontainers: 12.0.1
+    transitivePeerDependencies:
+      - bare-abort-controller
+      - bare-buffer
+      - react-native-b4a
+      - supports-color
+
   '@testcontainers/mongodb@12.0.1':
     dependencies:
       compare-versions: 6.1.1
@@ -6234,6 +6275,8 @@ snapshots:
   json-schema-traverse@1.0.0: {}
 
   json-stable-stringify-without-jsonify@1.0.1: {}
+
+  kafkajs@2.2.4: {}
 
   keyv@4.5.4:
     dependencies:
