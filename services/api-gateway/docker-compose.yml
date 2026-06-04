@@ -94,7 +94,7 @@ services:
       - hr-core
 
   prometheus:
-    image: prom/prometheus:v3.11.3
+    image: prom/prometheus:v3.12.0
     container_name: hr-core-prometheus
     restart: unless-stopped
     command:
