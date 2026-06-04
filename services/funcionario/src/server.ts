@@ -1,6 +1,12 @@
 import { buildApp } from './app.js'
 import { env } from './config/env.js'
 import { closeMongo, connectMongo } from './database/mongo.js'
+import { KafkaEventPublisher } from './infrastructure/messaging/event-publisher.js'
+import {
+  connectKafka,
+  disconnectKafka,
+  isKafkaEnabled,
+} from './infrastructure/messaging/kafka-client.js'
 import { closeS3, ensureBucket } from './storage/s3.js'
 import { shutdownTracing } from './tracing.js'
 
@@ -10,12 +16,25 @@ async function start(): Promise<void> {
   // (no-op se MinIO/S3 já tem o bucket). Falha-fast no boot se o storage
   // estiver fora — não tem sentido subir o serviço sem ele.
   await ensureBucket()
-  const app = await buildApp({ db })
+
+  // Setup Kafka opcional (KAFKA_ENABLED=false → LogEventPublisher).
+  let kafkaEvents: KafkaEventPublisher | undefined
+  if (isKafkaEnabled()) {
+    const { producer } = await connectKafka()
+    kafkaEvents = new KafkaEventPublisher(producer, console as never)
+  }
+
+  const app = await buildApp(kafkaEvents ? { db, events: kafkaEvents } : { db })
+
+  if (kafkaEvents) {
+    Object.assign(kafkaEvents, { log: app.log })
+  }
 
   const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
     app.log.info({ signal }, 'shutdown signal received')
     try {
       await app.close()
+      await disconnectKafka()
       await closeMongo()
       closeS3()
       await shutdownTracing()

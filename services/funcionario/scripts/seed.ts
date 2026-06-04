@@ -26,6 +26,7 @@
  * Zod schema de env). Aceita override pontual via services/funcionario/.env.
  */
 import { closeMongo, connectMongo } from '../src/database/mongo.js'
+import { LogEventPublisher } from '../src/infrastructure/messaging/event-publisher.js'
 import { Cpf } from '../src/modules/domain/value-objects/cpf.js'
 import { ContadorRepository } from '../src/modules/repositories/contador.repository.js'
 import { FuncionarioRepository } from '../src/modules/repositories/funcionario.repository.js'
@@ -38,6 +39,12 @@ interface SeedFuncionario {
   readonly telefone: string
   readonly cargo: string
   readonly departamento: string
+  // Salário/dependentes viajam no evento FuncionarioCriado para o
+  // ms-folha-pagamento. DEVEM bater com o SALARIOS_BASE do seed de
+  // folha-pagamento (services/folha-pagamento/scripts/seed.ts) — ambos
+  // são fonte dos mesmos 3 funcionários e precisam ficar idênticos.
+  readonly salarioBase: number
+  readonly numeroDependentes: number
 }
 
 const SEED_FUNCIONARIOS: readonly SeedFuncionario[] = [
@@ -48,6 +55,8 @@ const SEED_FUNCIONARIOS: readonly SeedFuncionario[] = [
     telefone: '11999990001',
     cargo: 'Desenvolvedora',
     departamento: 'Tecnologia',
+    salarioBase: 8_500,
+    numeroDependentes: 1,
   },
   {
     nome: 'Bruno Costa',
@@ -56,6 +65,8 @@ const SEED_FUNCIONARIOS: readonly SeedFuncionario[] = [
     telefone: '11999990002',
     cargo: 'Coordenador',
     departamento: 'Recursos Humanos',
+    salarioBase: 7_200,
+    numeroDependentes: 2,
   },
   {
     nome: 'Carla Dias',
@@ -64,6 +75,8 @@ const SEED_FUNCIONARIOS: readonly SeedFuncionario[] = [
     telefone: '11999990003',
     cargo: 'Analista',
     departamento: 'Financeiro',
+    salarioBase: 5_500,
+    numeroDependentes: 0,
   },
 ]
 
@@ -72,7 +85,11 @@ async function seed(): Promise<void> {
   const db = await connectMongo()
   const repo = new FuncionarioRepository(db)
   const contadorRepo = new ContadorRepository(db)
-  const service = new FuncionarioService(repo, contadorRepo)
+  // Seed escreve direto no Mongo e não sobe Kafka — usa LogEventPublisher (só
+  // loga o FuncionarioCriado em JSON). O publish é exigido pelo construtor do
+  // service desde a implantação do event bus.
+  const events = new LogEventPublisher(console as never)
+  const service = new FuncionarioService(repo, contadorRepo, events)
 
   console.log('')
   console.log(

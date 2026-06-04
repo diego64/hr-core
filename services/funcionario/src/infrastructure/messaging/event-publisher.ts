@@ -1,41 +1,39 @@
 /**
- * Contrato de publicação de eventos de domínio. Mesmo padrão do ms-ferias:
- * `LogEventPublisher` é stub que loga JSON estruturado até Kafka entrar no
- * projeto. Os services não mudam quando o broker subir.
+ * EventPublisher do ms-funcionario.
  *
- * Payload segue o doc da arquitetura ms-avaliacao:
- *   { eventType, aggregateId, occurredAt, payload, source: 'ms-avaliacao' }
+ *   - `KafkaEventPublisher`               — Publica no broker Kafka real
+ *     (kafkajs). Usado quando KAFKA_ENABLED=true.
+ *   - `LogEventPublisher`                 — Fallback. Loga JSON estruturado.
+ *   - `InMemoryEventPublisher` (test/)    — Acumula para asserções.
  */
 import type { FastifyBaseLogger } from 'fastify'
 import type { Producer } from 'kafkajs'
 
 import { TOPICS_PRODUCED } from './topics.js'
 
-export type AvaliacaoEventType =
-  | 'AvaliacaoCriada'
-  | 'AvaliacaoAtualizada'
-  | 'AvaliadorCriado'
-  | 'AvaliadorDesativado'
+export type FuncionarioEventType =
+  | 'FuncionarioCriado'
+  | 'FuncionarioDesligado'
+  | 'SalarioAlterado'
+  | 'DependenteAdicionado'
 
 export interface DomainEventMessage {
-  readonly eventType: AvaliacaoEventType
-  readonly aggregateId: string
-  readonly occurredAt: string
+  readonly eventType: FuncionarioEventType
+  readonly aggregateId: string // funcionarioId
+  readonly occurredAt: string // ISO 8601
   readonly payload: Record<string, unknown>
-  readonly source: 'ms-avaliacao'
+  readonly source: 'ms-funcionario'
 }
 
 export interface EventPublisher {
   publish(event: Omit<DomainEventMessage, 'source' | 'occurredAt'>): Promise<void>
 }
 
-const TOPIC_BY_EVENT: Readonly<Record<AvaliacaoEventType, string | undefined>> = {
-  AvaliacaoCriada: TOPICS_PRODUCED.AVALIACAO_CRIADA,
-  AvaliacaoAtualizada: TOPICS_PRODUCED.AVALIACAO_ATUALIZADA,
-  // AvaliadorCriado/Desativado não publicados em Kafka — apenas internos
-  // (não consumidos por outros services). Mantidos no enum.
-  AvaliadorCriado: undefined,
-  AvaliadorDesativado: undefined,
+const TOPIC_BY_EVENT: Readonly<Record<FuncionarioEventType, string>> = {
+  FuncionarioCriado: TOPICS_PRODUCED.FUNCIONARIO_CRIADO,
+  FuncionarioDesligado: TOPICS_PRODUCED.FUNCIONARIO_DESLIGADO,
+  SalarioAlterado: TOPICS_PRODUCED.SALARIO_ALTERADO,
+  DependenteAdicionado: TOPICS_PRODUCED.DEPENDENTE_ADICIONADO,
 } as const
 
 export class LogEventPublisher implements EventPublisher {
@@ -45,7 +43,7 @@ export class LogEventPublisher implements EventPublisher {
     const message: DomainEventMessage = {
       ...event,
       occurredAt: new Date().toISOString(),
-      source: 'ms-avaliacao',
+      source: 'ms-funcionario',
     }
     this.log.info({ event: message }, `event.published ${message.eventType}`)
   }
@@ -59,14 +57,10 @@ export class KafkaEventPublisher implements EventPublisher {
 
   async publish(event: Omit<DomainEventMessage, 'source' | 'occurredAt'>): Promise<void> {
     const topic = TOPIC_BY_EVENT[event.eventType]
-    if (!topic) {
-      this.log.debug({ eventType: event.eventType }, 'event sem tópico — skip')
-      return
-    }
     const message: DomainEventMessage = {
       ...event,
       occurredAt: new Date().toISOString(),
-      source: 'ms-avaliacao',
+      source: 'ms-funcionario',
     }
     await this.producer.send({
       topic,

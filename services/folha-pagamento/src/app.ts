@@ -46,6 +46,10 @@ export interface AppContext {
   readonly events: EventPublisher
 }
 
+// Re-exporta tipo de deps do AppContext para o server.ts wirear consumer
+// Kafka opcional após buildApp().
+export type { FuncionarioCacheRepository } from './modules/repositories/funcionario-cache.repository.js'
+
 export async function buildApp(deps: BuildAppDeps): Promise<FastifyInstance & { ctx: AppContext }> {
   const useTransport = env.NODE_ENV === 'development'
 

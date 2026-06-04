@@ -11,6 +11,10 @@ import {
 import type { Db } from 'mongodb'
 
 import { env } from './config/env.js'
+import {
+  LogEventPublisher,
+  type EventPublisher,
+} from './infrastructure/messaging/event-publisher.js'
 import authPlugin from './middlewares/auth.js'
 import corsPlugin from './middlewares/cors.js'
 import { registerErrorHandler } from './middlewares/error-handler.js'
@@ -41,6 +45,12 @@ export interface BuildAppDeps {
    * dependência de MinIO real.
    */
   readonly storage?: StoragePort
+  /**
+   * Injeção opcional do publisher de eventos. Default é LogEventPublisher
+   * (apenas loga). Quando Kafka estiver habilitado, o `server.ts` passa um
+   * KafkaEventPublisher. Em testes, InMemoryEventPublisher inspeciona.
+   */
+  readonly events?: EventPublisher
 }
 
 export async function buildApp(deps: BuildAppDeps): Promise<FastifyInstance> {
@@ -92,7 +102,8 @@ export async function buildApp(deps: BuildAppDeps): Promise<FastifyInstance> {
     putObject: s3.putObject,
     getPresignedDownloadUrl: s3.getPresignedDownloadUrl,
   }
-  const funcionarioService = new FuncionarioService(funcionarioRepo, contadorRepo)
+  const events: EventPublisher = deps.events ?? new LogEventPublisher(app.log)
+  const funcionarioService = new FuncionarioService(funcionarioRepo, contadorRepo, events)
   const documentoService = new DocumentoService(documentoRepo, funcionarioRepo, storage)
   const aprovacaoService = new AprovacaoService(aprovacaoRepo, funcionarioRepo)
 

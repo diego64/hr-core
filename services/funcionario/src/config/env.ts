@@ -49,6 +49,14 @@ const envSchema = z.object({
     .default('true')
     .transform((v) => v === 'true'),
   S3_PRESIGN_EXPIRES_SECONDS: z.coerce.number().int().positive().max(3600).default(900),
+
+  // Kafka — quando KAFKA_ENABLED=false o service usa LogEventPublisher e
+  // não publica eventos no broker.
+  KAFKA_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  KAFKA_BROKERS: z.string().default('host.docker.internal:19092'),
 })
 
 export type Env = z.infer<typeof envSchema>

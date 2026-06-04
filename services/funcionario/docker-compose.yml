@@ -75,6 +75,10 @@ services:
       OTEL_ENABLED: 'true'
       OTEL_SERVICE_NAME: funcionario
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+
+      # Kafka — broker compartilhado em infra/docker-compose.kafka.yml
+      KAFKA_ENABLED: ${KAFKA_ENABLED:-true}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-host.docker.internal:19092}
     extra_hosts:
       # Permite que o container resolva o host Docker (auth rodando local).
       - 'host.docker.internal:host-gateway'
