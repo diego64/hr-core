@@ -112,7 +112,7 @@ services:
       - hr-folha-pagamento
 
   prometheus:
-    image: prom/prometheus:v3.11.3
+    image: prom/prometheus:v3.12.0
     container_name: hr-core-folha-pagamento-prometheus
     restart: unless-stopped
     command:
