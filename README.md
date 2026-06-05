@@ -70,8 +70,7 @@ hr-core/
 │   └── docker-compose.kafka.yml   # event bus Kafka (KRaft) + Kafka UI, compartilhado
 ├── argocd/ · manifests/    # GitOps / Kubernetes
 ├── image/                  # diagramas de arquitetura
-├── pnpm-workspace.yaml
-└── CLAUDE.md               # guia de contexto e padrões do projeto
+└── pnpm-workspace.yaml
 ```
 
 Cada serviço segue a mesma estrutura interna:
