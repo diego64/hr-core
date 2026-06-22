@@ -7,7 +7,7 @@
 #   4. prod-deps  — somente production deps offline
 #   5. runtime    — imagem final mínima, non-root
 
-FROM node:22.22.3-alpine AS base
+FROM node:22.23.0-alpine AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable && corepack prepare pnpm@11.0.9 --activate
@@ -40,7 +40,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
       --filter @hr-core/folha-pagamento... \
       --config.confirmModulesPurge=false
 
-FROM node:22.22.3-alpine AS runtime
+FROM node:22.23.0-alpine AS runtime
 ENV NODE_ENV=production
 ENV PORT=3004
 ENV HOST=0.0.0.0
