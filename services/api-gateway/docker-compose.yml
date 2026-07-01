@@ -69,7 +69,7 @@ services:
       - hr-core
 
   mock-backend:
-    image: mendhak/http-https-echo:40
+    image: mendhak/http-https-echo:41
     container_name: hr-core-mock-backend
     restart: unless-stopped
     environment:
