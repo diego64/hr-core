@@ -80,7 +80,7 @@ services:
       - hr-core
 
   tempo:
-    image: grafana/tempo:3.0.0
+    image: grafana/tempo:3.0.2
     container_name: hr-core-tempo
     restart: unless-stopped
     command: ['-config.file=/etc/tempo.yaml']
